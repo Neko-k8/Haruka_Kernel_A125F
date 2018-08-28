@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export TC_DIR="/run/media/hakyura/261dea50-a8a4-4d2a-8b3e-540a49827e31/toolchain"
+export TC_DIR="/home/hakyura/toolchain"
 export CROSS_COMPILE="${TC_DIR}/aarch64--glibc--stable-2025.08-1/bin/aarch64-buildroot-linux-gnu-"
 export CC="${TC_DIR}/Clang-22/bin/clang"
 export CLANG_TRIPLE=aarch64-linux-gnu-

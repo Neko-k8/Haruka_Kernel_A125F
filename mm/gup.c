@@ -4,6 +4,7 @@
 #include <linux/spinlock.h>
 
 #include <linux/mm.h>
+#include <linux/migrate.h>
 #include <linux/memremap.h>
 #include <linux/pagemap.h>
 #include <linux/rmap.h>
