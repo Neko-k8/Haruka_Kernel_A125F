@@ -586,7 +586,7 @@ static int dw8250_probe(struct platform_device *pdev)
 	data->clk = devm_clk_get(dev, "baudclk");
 	if (IS_ERR(data->clk) && PTR_ERR(data->clk) != -EPROBE_DEFER)
 		data->clk = devm_clk_get(dev, NULL);
-	if (IS_ERR(data->clk) && PTR_ERR(data->clk) == -EPROBE_DEFER)
+	if (PTR_ERR(data->clk) == -EPROBE_DEFER)
 		return -EPROBE_DEFER;
 	if (!IS_ERR_OR_NULL(data->clk)) {
 		err = clk_prepare_enable(data->clk);
@@ -605,7 +605,7 @@ static int dw8250_probe(struct platform_device *pdev)
 	}
 
 	data->pclk = devm_clk_get(dev, "apb_pclk");
-	if (IS_ERR(data->pclk) && PTR_ERR(data->pclk) == -EPROBE_DEFER) {
+	if (PTR_ERR(data->pclk) == -EPROBE_DEFER) {
 		err = -EPROBE_DEFER;
 		goto err_clk;
 	}
