@@ -1654,7 +1654,6 @@ static void fuse_writepage_finish(struct fuse_conn *fc,
 	struct backing_dev_info *bdi = inode_to_bdi(inode);
 	int i;
 
-	rb_erase(&wpa->writepages_entry, &fi->writepages);
 	for (i = 0; i < ap->num_pages; i++) {
 		dec_wb_stat(&bdi->wb, WB_WRITEBACK);
 		dec_node_page_state(ap->pages[i], NR_WRITEBACK_TEMP);
@@ -1705,6 +1704,7 @@ __acquires(fi->lock)
 
  out_free:
 	fi->writectr--;
+	rb_erase(&wpa->writepages_entry, &fi->writepages);
 	fuse_writepage_finish(fc, wpa);
 	spin_unlock(&fi->lock);
 
@@ -1782,6 +1782,7 @@ static void fuse_writepage_end(struct fuse_conn *fc, struct fuse_args *args,
 
 	mapping_set_error(inode->i_mapping, error);
 	spin_lock(&fi->lock);
+	rb_erase(&wpa->writepages_entry, &fi->writepages);
 	while (wpa->next) {
 		struct fuse_conn *fc = get_fuse_conn(inode);
 		struct fuse_write_in *inarg = &wpa->ia.write.in;
