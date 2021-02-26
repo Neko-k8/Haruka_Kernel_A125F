@@ -1495,31 +1495,6 @@ out:
 	return ret;
 }
 
-static int reconfigure_single(struct super_block *s,
-			      int flags, void *data)
-{
-	struct fs_context *fc;
-	int ret;
-
-	/* The caller really need to be passing fc down into mount_single(),
-	 * then a chunk of this can be removed.  [Bollocks -- AV]
-	 * Better yet, reconfiguration shouldn't happen, but rather the second
-	 * mount should be rejected if the parameters are not compatible.
-	 */
-	fc = fs_context_for_reconfigure(s->s_root, flags, MS_RMT_MASK);
-	if (IS_ERR(fc))
-		return PTR_ERR(fc);
-
-	ret = parse_monolithic_mount_data(fc, data);
-	if (ret < 0)
-		goto out;
-
-	ret = reconfigure_super(fc);
-out:
-	put_fs_context(fc);
-	return ret;
-}
-
 static int compare_single(struct super_block *s, void *p)
 {
 	return 1;
