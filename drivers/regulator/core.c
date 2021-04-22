@@ -1261,6 +1261,8 @@ static int set_machine_constraints(struct regulator_dev *rdev)
 			return ret;
 		}
 		rdev->use_count++;
+	} else if (rdev->desc->off_on_delay) {
+		rdev->last_off_jiffy = jiffies;
 	}
 
 	print_constraints(rdev);
