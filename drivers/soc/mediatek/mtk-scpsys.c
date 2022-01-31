@@ -572,51 +572,6 @@ static int init_clks(struct platform_device *pdev, struct clk **clk)
 	return 0;
 }
 
-static int mtk_pd_set_performance(struct generic_pm_domain *genpd,
-				  unsigned int state)
-{
-	int i;
-	struct scp_domain *scpd =
-		container_of(genpd, struct scp_domain, genpd);
-	struct scp_event_data scpe;
-	struct scp *scp = scpd->scp;
-	struct genpd_onecell_data *pd_data = &scp->pd_data;
-
-	for (i = 0; i < pd_data->num_domains; i++) {
-		if (genpd == pd_data->domains[i]) {
-			dev_dbg(scp->dev, "%d. %s = %d\n",
-				i, genpd->name, state);
-			break;
-		}
-	}
-
-	if (i == pd_data->num_domains)
-		return 0;
-
-	scpe.event_type = MTK_SCPSYS_PSTATE;
-	scpe.genpd = genpd;
-	scpe.domain_id = i;
-	blocking_notifier_call_chain(&scpsys_notifier_list, state, &scpe);
-
-	return 0;
-}
-
-static unsigned int mtk_pd_get_performance(struct generic_pm_domain *genpd,
-					   struct dev_pm_opp *opp)
-{
-	struct device_node *np;
-	unsigned int val = 0;
-
-	np = dev_pm_opp_get_of_node(opp);
-
-	if (np) {
-		of_property_read_u32(np, "opp-level", &val);
-		of_node_put(np);
-	}
-
-	return val;
-}
-
 static struct scp *init_scp(struct platform_device *pdev,
 			const struct scp_domain_data *scp_domain_data, int num,
 			const struct scp_ctrl_reg *scp_ctrl_reg,
