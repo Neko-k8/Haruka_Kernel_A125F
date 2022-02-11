@@ -72,56 +72,12 @@
 #define DMA_ATTR_PRIVILEGED		(1UL << 9)
 
 /*
- * DMA_ATTR_STRONGLY_ORDERED: Specifies that accesses to the mapping must
- * not be buffered, reordered, merged with other accesses, or unaligned.
- * No speculative access may occur in this mapping.
+ * This is a hint to the DMA-mapping subsystem that the device is expected
+ * to overwrite the entire mapped size, thus the caller does not require any
+ * of the previous buffer contents to be preserved. This allows
+ * bounce-buffering implementations to optimise DMA_FROM_DEVICE transfers.
  */
-#define DMA_ATTR_STRONGLY_ORDERED	(1UL << 10)
-/*
- * DMA_ATTR_SKIP_ZEROING: Do not zero mapping.
- */
-#define DMA_ATTR_SKIP_ZEROING		(1UL << 11)
-/*
- * DMA_ATTR_NO_DELAYED_UNMAP: Used by msm specific lazy mapping to indicate
- * that the mapping can be freed on unmap, rather than when the ion_buffer
- * is freed.
- */
-#define DMA_ATTR_NO_DELAYED_UNMAP	(1UL << 12)
-/*
- * DMA_ATTR_EXEC_MAPPING: The mapping has executable permissions.
- */
-#define DMA_ATTR_EXEC_MAPPING		(1UL << 13)
-/*
- * DMA_ATTR_IOMMU_USE_UPSTREAM_HINT: Normally an smmu will override any bus
- * attributes (i.e cacheablilty) provided by the client device. Some hardware
- * may be designed to use the original attributes instead.
- */
-#define DMA_ATTR_IOMMU_USE_UPSTREAM_HINT	(1UL << 14)
-/*
- * When passed to a DMA map call the DMA_ATTR_FORCE_COHERENT DMA
- * attribute can be used to force a buffer to be mapped as IO coherent.
- */
-#define DMA_ATTR_FORCE_COHERENT			(1UL << 15)
-/*
- * When passed to a DMA map call the DMA_ATTR_FORCE_NON_COHERENT DMA
- * attribute can be used to force a buffer to not be mapped as IO
- * coherent.
- */
-#define DMA_ATTR_FORCE_NON_COHERENT		(1UL << 16)
-/*
- * DMA_ATTR_DELAYED_UNMAP: Used by ION, it will ensure that mappings are not
- * removed on unmap but instead are removed when the ion_buffer is freed.
- */
-#define DMA_ATTR_DELAYED_UNMAP		(1UL << 17)
-
-/*
- * DMA_ATTR_IOMMU_USE_LLC_NWA: Overrides the bus attributes to use the System
- * Cache(LLC) with allocation policy as Inner Non-Cacheable, Outer Cacheable:
- * Write-Back, Read-Allocate, No Write-Allocate policy.
- */
-#define DMA_ATTR_IOMMU_USE_LLC_NWA	(1UL << 18)
-
-#define DMA_ERROR_CODE       (~(dma_addr_t)0)
+#define DMA_ATTR_OVERWRITE		(1UL << 10)
 
 /*
  * A dma_addr_t can hold any valid DMA or bus address for the platform.
