@@ -25,10 +25,6 @@
 #define MMC_CARD_REMOVED	(1<<4)		/* card has been removed */
 #define MMC_STATE_SUSPENDED	(1<<5)		/* card is suspended */
 
-#if defined(CONFIG_MTK_EMMC_CQ_SUPPORT)
-#define MMC_STATE_CMDQ		(1<<12)         /* card is in cmd queue mode */
-#endif
-
 #define mmc_card_present(c)	((c)->state & MMC_STATE_PRESENT)
 #define mmc_card_readonly(c)	((c)->state & MMC_STATE_READONLY)
 #define mmc_card_blockaddr(c)	((c)->state & MMC_STATE_BLOCKADDR)
