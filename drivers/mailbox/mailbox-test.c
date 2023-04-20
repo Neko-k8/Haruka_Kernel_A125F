@@ -117,8 +117,10 @@ static ssize_t mbox_test_message_write(struct file *filp,
 		return -EINVAL;
 	}
 
-	message = kzalloc(MBOX_MAX_MSG_LEN, GFP_KERNEL);
-	if (!message)
+	mutex_lock(&tdev->mutex);
+
+	tdev->message = kzalloc(MBOX_MAX_MSG_LEN, GFP_KERNEL);
+	if (!tdev->message)
 		return -ENOMEM;
 
 	mutex_lock(&tdev->mutex);
