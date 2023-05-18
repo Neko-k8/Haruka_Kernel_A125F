@@ -204,8 +204,6 @@ static int mtk_disp_pwm_config(struct pwm_chip *chip, struct pwm_device *pwm,
 	dev_dbg(mdp->chip.dev, "high_width=%d period=%d\n",
 		high_width, period);
 
-	pwm_src_power_on(mdp);
-
 	if (mdp->data->bls_debug && !mdp->data->has_commit) {
 		/*
 		 * For MT2701, disable double buffer before writing register
@@ -249,6 +247,13 @@ static int mtk_disp_pwm_enable(struct pwm_chip *chip, struct pwm_device *pwm)
 	err = clk_prepare_enable(mdp->clk_main);
 	if (err < 0) {
 		dev_err(chip->dev, "Can't enable mdp->clk_main: %pe\n", ERR_PTR(err));
+		return err;
+	}
+
+	err = clk_prepare_enable(mdp->clk_mm);
+	if (err < 0) {
+		dev_err(chip->dev, "Can't enable mdp->clk_mm: %pe\n", ERR_PTR(err));
+		clk_disable_unprepare(mdp->clk_main);
 		return err;
 	}
 
