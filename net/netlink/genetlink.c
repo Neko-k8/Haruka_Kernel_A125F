@@ -991,8 +991,7 @@ static int genl_bind(struct net *net, int group)
 		break;
 	}
 
-	genl_unlock_all();
-	return ret;
+	return err;
 }
 
 static int __net_init genl_pernet_init(struct net *net)
