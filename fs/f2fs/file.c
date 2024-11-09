@@ -218,8 +218,6 @@ static inline enum cp_reason_type need_do_checkpoint(struct inode *inode)
 							XATTR_DIR_INO))
 		cp_reason = CP_XATTR_DIR;
 
-	sbi->sec_stat.cpr_cnt[cp_reason]++;
-
 	return cp_reason;
 }
 
