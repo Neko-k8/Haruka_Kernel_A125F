@@ -1034,7 +1034,7 @@ void devm_of_phy_provider_unregister(struct device *dev,
 {
 	int r;
 
-	r = devres_destroy(dev, devm_phy_provider_release, devm_phy_match,
+	r = devres_release(dev, devm_phy_provider_release, devm_phy_match,
 		phy_provider);
 	dev_WARN_ONCE(dev, r, "couldn't find PHY provider device resource\n");
 }
