@@ -931,6 +931,7 @@ void ubifs_dump_tnc(struct ubifs_info *c)
 
 	pr_err("\n");
 	pr_err("(pid %d) start dumping TNC tree\n", current->pid);
+	if (c->zroot.znode) {
 	znode = ubifs_tnc_levelorder_next(c, c->zroot.znode, NULL);
 	level = znode->level;
 	pr_err("== Level %d ==\n", level);
@@ -941,6 +942,9 @@ void ubifs_dump_tnc(struct ubifs_info *c)
 		}
 		ubifs_dump_znode(c, znode);
 		znode = ubifs_tnc_levelorder_next(c, c->zroot.znode, znode);
+	}
+	} else {
+		pr_err("empty TNC tree in memory\n");
 	}
 	pr_err("(pid %d) finish dumping TNC tree\n", current->pid);
 }
