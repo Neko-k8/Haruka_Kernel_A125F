@@ -5054,6 +5054,7 @@ static void pci_slot_unlock(struct pci_slot *slot)
 			continue;
 		if (dev->subordinate)
 			pci_bus_unlock(dev->subordinate);
+		else
 		pci_dev_unlock(dev);
 	}
 }
