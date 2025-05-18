@@ -1579,6 +1579,9 @@ hfsc_enqueue(struct sk_buff *skb, struct Qdisc *sch, struct sk_buff **to_free)
 		return err;
 	}
 
+	qdisc_qstats_backlog_inc(sch, skb);
+	sch->q.qlen++;
+
 	if (cl->qdisc->q.qlen == 1) {
 		unsigned int len = qdisc_pkt_len(skb);
 
@@ -1595,9 +1598,6 @@ hfsc_enqueue(struct sk_buff *skb, struct Qdisc *sch, struct sk_buff **to_free)
 			cl->qdisc->ops->peek(cl->qdisc);
 
 	}
-
-	qdisc_qstats_backlog_inc(sch, skb);
-	sch->q.qlen++;
 
 	return NET_XMIT_SUCCESS;
 }
