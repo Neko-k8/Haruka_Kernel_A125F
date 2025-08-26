@@ -232,8 +232,10 @@ static void blk_mq_unregister_hctx(struct blk_mq_hw_ctx *hctx)
 		return;
 
 	hctx_for_each_ctx(hctx, ctx, i)
+		if (ctx->kobj.state_in_sysfs)
 		kobject_del(&ctx->kobj);
 
+	if (hctx->kobj.state_in_sysfs)
 	kobject_del(&hctx->kobj);
 }
 
