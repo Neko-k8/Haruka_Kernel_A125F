@@ -739,11 +739,16 @@ void object_err(struct kmem_cache *s, struct page *page,
 #endif
 
 	slab_bug(s, "%s", reason);
+	if (!object || !check_valid_pointer(s, page, object)) {
+		print_page_info(page);
+		pr_err("Invalid pointer 0x%p\n", object);
+	} else {
 	print_trailer(s, page, object);
 
 #ifdef CONFIG_SEC_DEBUG_AUTO_COMMENT
 	pr_auto_disable(7);
 #endif
+}
 }
 
 static __printf(3, 4) void slab_err(struct kmem_cache *s, struct page *page,
