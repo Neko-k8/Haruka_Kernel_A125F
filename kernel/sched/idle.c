@@ -10,7 +10,7 @@
  *
  * Backport-friendly: avoids exotic APIs, uses weak hooks where appropriate.
  *
- * Copyright: ChatGPT-assisted update (2025)
+ * Copyright: ChatGPT & Haruka assisted update (2025)
  * License: same as kernel (GPL-compatible)
  */
 
