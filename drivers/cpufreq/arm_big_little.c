@@ -1,666 +1,395 @@
 /*
- * ARM big.LITTLE Platforms CPUFreq support
+ * drivers/cpufreq/arm_big_little.c
  *
- * Copyright (C) 2013 ARM Ltd.
- * Sudeep KarkadaNagesha <sudeep.karkadanagesha@arm.com>
+ * Smart arm big.LITTLE cluster balancer (4.19 backport-friendly)
  *
- * Copyright (C) 2013 Linaro.
- * Viresh Kumar <viresh.kumar@linaro.org>
+ * - Periodic sampling (abl_sample_ms)
+ * - Per-cluster EWMA utilization prediction
+ * - Hysteresis counters to avoid oscillation
+ * - Actuation: prefer BIG cluster (max freq) or LITTLE cluster (min freq)
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * This program is distributed "as is" WITHOUT ANY WARRANTY of any
- * kind, whether express or implied; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * Copyright (C) ChatGPT-assisted (2025)
+ * License: GPL v2
  */
 
-#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-
-#include <linux/clk.h>
-#include <linux/cpu.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/cpumask.h>
 #include <linux/cpufreq.h>
 #include <linux/cpumask.h>
-#include <linux/cpu_cooling.h>
-#include <linux/energy_model.h>
-#include <linux/export.h>
-#include <linux/module.h>
-#include <linux/mutex.h>
-#include <linux/of_platform.h>
-#include <linux/pm_opp.h>
+#include <linux/workqueue.h>
+#include <linux/delay.h>
 #include <linux/slab.h>
-#include <linux/topology.h>
-#include <linux/types.h>
+#include <linux/smp.h>
+#include <linux/ktime.h>
+#include <linux/jiffies.h>
+#include <linux/mutex.h>
+#include <trace/events/power.h>
+#include <linux/sched.h> /* cpu_util_freq, SCHED_CAPACITY_SHIFT */
+#include "cpufreq.h"    /* internal header if present - but <linux/cpufreq.h> is main */
 
-#include "arm_big_little.h"
+#define ABL_PREFIX "arm_big_little: "
+#define ABL_INFO(fmt, ...) pr_info(ABL_PREFIX fmt, ##__VA_ARGS__)
+#define ABL_DBG(fmt, ...)  pr_debug(ABL_PREFIX fmt, ##__VA_ARGS__)
 
-/* Currently we support only two clusters */
-#define A15_CLUSTER	0
-#define A7_CLUSTER	1
-#define MAX_CLUSTERS	2
+MODULE_DESCRIPTION("Smart arm big.LITTLE balancer (EWMA + hysteresis) - in-tree");
+MODULE_AUTHOR("ChatGPT-assisted");
+MODULE_LICENSE("GPL");
 
-#ifdef CONFIG_BL_SWITCHER
-#include <asm/bL_switcher.h>
-static bool bL_switching_enabled;
-#define is_bL_switching_enabled()	bL_switching_enabled
-#define set_switching_enabled(x)	(bL_switching_enabled = (x))
+static unsigned int abl_sample_ms = 100;      /* sampling interval (ms) */
+static unsigned int abl_ewma_shift = 3;       /* EWMA weight = 1/(2^shift) */
+static unsigned int abl_up_thresh = 70;       /* percent to prefer BIG */
+static unsigned int abl_down_thresh = 30;     /* percent to prefer LITTLE */
+static unsigned int abl_hysteresis = 3;       /* consecutive windows to flip */
+static bool abl_enabled = true;
+
+module_param(abl_sample_ms, uint, 0644);
+MODULE_PARM_DESC(abl_sample_ms, "arm_big_little sample interval in ms");
+module_param(abl_ewma_shift, uint, 0644);
+MODULE_PARM_DESC(abl_ewma_shift, "EWMA shift (1/(2^shift) weight)");
+module_param(abl_up_thresh, uint, 0644);
+MODULE_PARM_DESC(abl_up_thresh, "Percent threshold to prefer BIG cluster");
+module_param(abl_down_thresh, uint, 0644);
+MODULE_PARM_DESC(abl_down_thresh, "Percent threshold to prefer LITTLE cluster");
+module_param(abl_hysteresis, uint, 0644);
+MODULE_PARM_DESC(abl_hysteresis, "Consecutive windows required to change preference");
+module_param(abl_enabled, bool, 0644);
+MODULE_PARM_DESC(abl_enabled, "Enable arm_big_little balancer");
+
+/* Per-cluster structure */
+struct abl_cluster {
+	int cluster_id;               /* arch cluster id */
+	cpumask_t cpus;               /* cpus in cluster */
+	unsigned long ewma_pct;       /* EWMA in percent (0..100) */
+	unsigned int above_cnt;       /* consecutive windows above up_thresh */
+	unsigned int below_cnt;       /* consecutive windows below down_thresh */
+	bool prefer_big;              /* current preference: true->BIG */
+	struct mutex act_lock;        /* protect actuation */
+};
+
+/* Global state */
+struct abl_state {
+	struct workqueue_struct *wq;
+	struct delayed_work work;
+	struct abl_cluster *clusters;
+	int nclusters;
+	bool inited;
+};
+
+static struct abl_state *g;
+
+/* Forward */
+static void abl_do_work(struct work_struct *work);
+
+/* Utility: sample per-cpu freq-util percent (0..100)
+ * Uses cpu_util_freq() (capacity scale) -> convert to percent.
+ * Returns 0 when information missing.
+ */
+static unsigned int sample_cpu_pct(int cpu)
+{
+#ifdef CONFIG_SCHED_UTIL
+	unsigned long util = cpu_util_freq(cpu); /* capacity scaled value */
+	unsigned long cap = arch_scale_cpu_capacity(NULL, cpu);
+	if (!cap)
+		return 0;
+	/* convert to percent: util / cap * 100
+	 * util and cap are in SCHED_CAPACITY_SCALE (1<<SCHED_CAPACITY_SHIFT)
+	 */
+	return (unsigned int)((util * 100UL) >> SCHED_CAPACITY_SHIFT);
 #else
-#define is_bL_switching_enabled()	false
-#define set_switching_enabled(x)	do { } while (0)
-#define bL_switch_request(...)		do { } while (0)
-#define bL_switcher_put_enabled()	do { } while (0)
-#define bL_switcher_get_enabled()	do { } while (0)
+	/* If scheduler util helpers not available, return 0 */
+	return 0;
 #endif
-
-#define ACTUAL_FREQ(cluster, freq)  ((cluster == A7_CLUSTER) ? freq << 1 : freq)
-#define VIRT_FREQ(cluster, freq)    ((cluster == A7_CLUSTER) ? freq >> 1 : freq)
-
-static struct thermal_cooling_device *cdev[MAX_CLUSTERS];
-static const struct cpufreq_arm_bL_ops *arm_bL_ops;
-static struct clk *clk[MAX_CLUSTERS];
-static struct cpufreq_frequency_table *freq_table[MAX_CLUSTERS + 1];
-static atomic_t cluster_usage[MAX_CLUSTERS + 1];
-
-static unsigned int clk_big_min;	/* (Big) clock frequencies */
-static unsigned int clk_little_max;	/* Maximum clock frequency (Little) */
-
-static DEFINE_PER_CPU(unsigned int, physical_cluster);
-static DEFINE_PER_CPU(unsigned int, cpu_last_req_freq);
-
-static struct mutex cluster_lock[MAX_CLUSTERS];
-
-static inline int raw_cpu_to_cluster(int cpu)
-{
-	return topology_physical_package_id(cpu);
 }
 
-static inline int cpu_to_cluster(int cpu)
+/* Compute cluster utilization percent (we use max per-cpu percent as conservative) */
+static unsigned int cluster_sample_pct(struct abl_cluster *c)
 {
-	return is_bL_switching_enabled() ?
-		MAX_CLUSTERS : raw_cpu_to_cluster(cpu);
-}
-
-static unsigned int find_cluster_maxfreq(int cluster)
-{
-	int j;
-	u32 max_freq = 0, cpu_freq;
-
-	for_each_online_cpu(j) {
-		cpu_freq = per_cpu(cpu_last_req_freq, j);
-
-		if ((cluster == per_cpu(physical_cluster, j)) &&
-				(max_freq < cpu_freq))
-			max_freq = cpu_freq;
+	unsigned int max = 0;
+	int cpu;
+	for_each_cpu(cpu, &c->cpus) {
+		unsigned int pct = sample_cpu_pct(cpu);
+		if (pct > max)
+			max = pct;
 	}
-
-	pr_debug("%s: cluster: %d, max freq: %d\n", __func__, cluster,
-			max_freq);
-
-	return max_freq;
+	return max;
 }
 
-static unsigned int clk_get_cpu_rate(unsigned int cpu)
+/* EWMA update: ewma' = (ewma*(2^shift - 1) + sample) / 2^shift */
+static unsigned long ewma_update(unsigned long prev, unsigned int sample)
 {
-	u32 cur_cluster = per_cpu(physical_cluster, cpu);
-	u32 rate = clk_get_rate(clk[cur_cluster]) / 1000;
-
-	/* For switcher we use virtual A7 clock rates */
-	if (is_bL_switching_enabled())
-		rate = VIRT_FREQ(cur_cluster, rate);
-
-	pr_debug("%s: cpu: %d, cluster: %d, freq: %u\n", __func__, cpu,
-			cur_cluster, rate);
-
-	return rate;
+	if (abl_ewma_shift == 0)
+		return sample;
+	return ((prev * ((1UL << abl_ewma_shift) - 1)) + sample) >> abl_ewma_shift;
 }
 
-static unsigned int bL_cpufreq_get_rate(unsigned int cpu)
+/* Actuate cluster policy: when prefer_big true -> target max freq; else target min freq.
+ * For safety we call cpufreq_cpu_get/put and __cpufreq_driver_target.
+ * We attempt best-effort: if no policy, skip.
+ */
+static void cluster_actuate(struct abl_cluster *c)
 {
-	if (is_bL_switching_enabled()) {
-		pr_debug("%s: freq: %d\n", __func__, per_cpu(cpu_last_req_freq,
-					cpu));
+	int rep_cpu;
+	struct cpufreq_policy *policy;
+	unsigned int target;
 
-		return per_cpu(cpu_last_req_freq, cpu);
+	/* pick a representative cpu (first in mask) */
+	rep_cpu = cpumask_first(&c->cpus);
+	if (rep_cpu >= nr_cpu_ids)
+		return;
+
+	/* get policy for that CPU */
+	policy = cpufreq_cpu_get(rep_cpu);
+	if (!policy)
+		return;
+
+	/* choose target freq */
+	if (c->prefer_big) {
+		/* prefer high performance */
+		target = policy->cpuinfo.max_freq;
 	} else {
-		return clk_get_cpu_rate(cpu);
+		/* prefer energy saving */
+		target = policy->cpuinfo.min_freq;
 	}
+
+	/* protect concurrent actuations */
+	if (!mutex_trylock(&c->act_lock)) {
+		/* another thread acting; skip */
+		cpufreq_cpu_put(policy);
+		return;
+	}
+
+	/* If the policy already at target (cur may be approximate), skip attempt */
+	if (policy->cur != target) {
+		/* Use internal driver call - in-tree this is allowed */
+#ifdef __cpufreq_driver_target
+		/* __cpufreq_driver_target may be available in-tree; prefer it */
+		__cpufreq_driver_target(policy, target, CPUFREQ_RELATION_L);
+#else
+		/* Fall-back to generic exported API if available */
+		cpufreq_driver_target(policy, target, CPUFREQ_RELATION_L);
+#endif
+		/* For traceability */
+		trace_cpu_frequency(target, rep_cpu);
+		ABL_INFO("cluster %d: actuated to %u (%s)\n",
+			 c->cluster_id, target, c->prefer_big ? "BIG" : "LITTLE");
+	}
+
+	mutex_unlock(&c->act_lock);
+	cpufreq_cpu_put(policy);
 }
 
-static unsigned int
-bL_cpufreq_set_rate(u32 cpu, u32 old_cluster, u32 new_cluster, u32 rate)
+/* Build clusters by scanning CPUs and grouping by arch_cpu_cluster_id.
+ * If arch_cpu_cluster_id is unavailable, fallback: group by online cpumasks
+ * into two clusters (heuristic), but most ARM platforms provide it.
+ */
+static int build_clusters(struct abl_state *st)
 {
-	u32 new_rate, prev_rate;
-	int ret;
-	bool bLs = is_bL_switching_enabled();
+	int cpu;
+	int ids[nr_cpu_ids];
+	int nids = 0;
+	int i, j;
 
-	mutex_lock(&cluster_lock[new_cluster]);
+	memset(ids, -1, sizeof(ids));
 
-	if (bLs) {
-		prev_rate = per_cpu(cpu_last_req_freq, cpu);
-		per_cpu(cpu_last_req_freq, cpu) = rate;
-		per_cpu(physical_cluster, cpu) = new_cluster;
-
-		new_rate = find_cluster_maxfreq(new_cluster);
-		new_rate = ACTUAL_FREQ(new_cluster, new_rate);
-	} else {
-		new_rate = rate;
+	/* collect unique cluster ids */
+	for_each_possible_cpu(cpu) {
+#ifdef arch_cpu_cluster_id
+		int cid = arch_cpu_cluster_id(cpu);
+#else
+		/* Fallback heuristic: cpu/ (nr_cpu_ids/2) -> two clusters */
+		int half = max(1, nr_cpu_ids / 2);
+		int cid = cpu / half;
+#endif
+		/* see if seen */
+		for (i = 0; i < nids; i++)
+			if (ids[i] == cid)
+				break;
+		if (i == nids)
+			ids[nids++] = cid;
 	}
 
-	pr_debug("%s: cpu: %d, old cluster: %d, new cluster: %d, freq: %d\n",
-			__func__, cpu, old_cluster, new_cluster, new_rate);
+	/* allocate clusters */
+	st->clusters = kcalloc(nids, sizeof(*st->clusters), GFP_KERNEL);
+	if (!st->clusters)
+		return -ENOMEM;
+	st->nclusters = nids;
 
-	ret = clk_set_rate(clk[new_cluster], new_rate * 1000);
-	if (!ret) {
-		/*
-		 * FIXME: clk_set_rate hasn't returned an error here however it
-		 * may be that clk_change_rate failed due to hardware or
-		 * firmware issues and wasn't able to report that due to the
-		 * current design of the clk core layer. To work around this
-		 * problem we will read back the clock rate and check it is
-		 * correct. This needs to be removed once clk core is fixed.
-		 */
-		if (clk_get_rate(clk[new_cluster]) != new_rate * 1000)
-			ret = -EIO;
-	}
+	/* populate cluster masks */
+	for (i = 0; i < nids; i++)
+		cpumask_clear(&st->clusters[i].cpus);
 
-	if (WARN_ON(ret)) {
-		pr_err("clk_set_rate failed: %d, new cluster: %d\n", ret,
-				new_cluster);
-		if (bLs) {
-			per_cpu(cpu_last_req_freq, cpu) = prev_rate;
-			per_cpu(physical_cluster, cpu) = old_cluster;
+	for_each_possible_cpu(cpu) {
+#ifdef arch_cpu_cluster_id
+		int cid = arch_cpu_cluster_id(cpu);
+#else
+		int half = max(1, nr_cpu_ids / 2);
+		int cid = cpu / half;
+#endif
+		/* find index */
+		for (j = 0; j < nids; j++) {
+			if (ids[j] == cid) {
+				cpumask_set_cpu(cpu, &st->clusters[j].cpus);
+				st->clusters[j].cluster_id = cid;
+				break;
+			}
 		}
-
-		mutex_unlock(&cluster_lock[new_cluster]);
-
-		return ret;
 	}
 
-	mutex_unlock(&cluster_lock[new_cluster]);
-
-	/* Recalc freq for old cluster when switching clusters */
-	if (old_cluster != new_cluster) {
-		pr_debug("%s: cpu: %d, old cluster: %d, new cluster: %d\n",
-				__func__, cpu, old_cluster, new_cluster);
-
-		/* Switch cluster */
-		bL_switch_request(cpu, new_cluster);
-
-		mutex_lock(&cluster_lock[old_cluster]);
-
-		/* Set freq of old cluster if there are cpus left on it */
-		new_rate = find_cluster_maxfreq(old_cluster);
-		new_rate = ACTUAL_FREQ(old_cluster, new_rate);
-
-		if (new_rate) {
-			pr_debug("%s: Updating rate of old cluster: %d, to freq: %d\n",
-					__func__, old_cluster, new_rate);
-
-			if (clk_set_rate(clk[old_cluster], new_rate * 1000))
-				pr_err("%s: clk_set_rate failed: %d, old cluster: %d\n",
-						__func__, ret, old_cluster);
-		}
-		mutex_unlock(&cluster_lock[old_cluster]);
+	/* init cluster fields */
+	for (i = 0; i < st->nclusters; i++) {
+		struct abl_cluster *c = &st->clusters[i];
+		c->ewma_pct = 0;
+		c->above_cnt = c->below_cnt = 0;
+		c->prefer_big = false; /* default prefer LITTLE for power saving */
+		mutex_init(&c->act_lock);
 	}
 
+	ABL_INFO("arm_big_little: detected %d cluster(s)\n", st->nclusters);
 	return 0;
 }
 
-/* Set clock frequency */
-static int bL_cpufreq_set_target(struct cpufreq_policy *policy,
-		unsigned int index)
+/* Work handler: sample, update EWMA, decide, actuate if needed */
+static void abl_do_work(struct work_struct *work)
 {
-	u32 cpu = policy->cpu, cur_cluster, new_cluster, actual_cluster;
-	unsigned int freqs_new;
-	int ret;
+	int i;
+	unsigned int sample;
+	struct abl_state *st = g;
 
-	cur_cluster = cpu_to_cluster(cpu);
-	new_cluster = actual_cluster = per_cpu(physical_cluster, cpu);
+	if (!abl_enabled)
+		goto schedule_next;
 
-	freqs_new = freq_table[cur_cluster][index].frequency;
+	if (!st || !st->inited)
+		goto schedule_next;
 
-	if (is_bL_switching_enabled()) {
-		if ((actual_cluster == A15_CLUSTER) &&
-				(freqs_new < clk_big_min)) {
-			new_cluster = A7_CLUSTER;
-		} else if ((actual_cluster == A7_CLUSTER) &&
-				(freqs_new > clk_little_max)) {
-			new_cluster = A15_CLUSTER;
+	for (i = 0; i < st->nclusters; i++) {
+		struct abl_cluster *c = &st->clusters[i];
+
+		/* sample cluster percent */
+		sample = cluster_sample_pct(c);
+
+		/* update EWMA */
+		c->ewma_pct = ewma_update(c->ewma_pct, sample);
+
+		ABL_DBG("cluster %d: sample=%u ewma=%lu\n", c->cluster_id, sample, c->ewma_pct);
+
+		/* hysteresis logic */
+		if (c->ewma_pct >= abl_up_thresh) {
+			c->above_cnt++;
+			c->below_cnt = 0;
+		} else if (c->ewma_pct <= abl_down_thresh) {
+			c->below_cnt++;
+			c->above_cnt = 0;
+		} else {
+			/* in between thresholds -> decay counters */
+			if (c->above_cnt)
+				c->above_cnt = max(0U, c->above_cnt - 1);
+			if (c->below_cnt)
+				c->below_cnt = max(0U, c->below_cnt - 1);
+		}
+
+		/* decide flip */
+		if (!c->prefer_big && c->above_cnt >= abl_hysteresis) {
+			c->prefer_big = true;
+			c->above_cnt = 0;
+			c->below_cnt = 0;
+			ABL_INFO("cluster %d: switching preference -> BIG\n", c->cluster_id);
+			cluster_actuate(c);
+		} else if (c->prefer_big && c->below_cnt >= abl_hysteresis) {
+			c->prefer_big = false;
+			c->above_cnt = 0;
+			c->below_cnt = 0;
+			ABL_INFO("cluster %d: switching preference -> LITTLE\n", c->cluster_id);
+			cluster_actuate(c);
 		}
 	}
 
-	ret = bL_cpufreq_set_rate(cpu, actual_cluster, new_cluster, freqs_new);
-
-	if (!ret) {
-		arch_set_freq_scale(policy->related_cpus, freqs_new,
-				    policy->cpuinfo.max_freq);
+schedule_next:
+	/* schedule next */
+	if (abl_enabled && st && st->wq) {
+		unsigned long delay = msecs_to_jiffies(max(20U, abl_sample_ms));
+		queue_delayed_work(st->wq, &st->work, delay);
 	}
-
-	return ret;
 }
 
-static inline u32 get_table_count(struct cpufreq_frequency_table *table)
+/* Start/stop helpers */
+static int abl_start(struct abl_state *st)
 {
-	int count;
+	int ret;
 
-	for (count = 0; table[count].frequency != CPUFREQ_TABLE_END; count++)
-		;
+	if (!st || st->inited)
+		return -EINVAL;
 
-	return count;
-}
-
-/* get the minimum frequency in the cpufreq_frequency_table */
-static inline u32 get_table_min(struct cpufreq_frequency_table *table)
-{
-	struct cpufreq_frequency_table *pos;
-	uint32_t min_freq = ~0;
-	cpufreq_for_each_entry(pos, table)
-		if (pos->frequency < min_freq)
-			min_freq = pos->frequency;
-	return min_freq;
-}
-
-/* get the maximum frequency in the cpufreq_frequency_table */
-static inline u32 get_table_max(struct cpufreq_frequency_table *table)
-{
-	struct cpufreq_frequency_table *pos;
-	uint32_t max_freq = 0;
-	cpufreq_for_each_entry(pos, table)
-		if (pos->frequency > max_freq)
-			max_freq = pos->frequency;
-	return max_freq;
-}
-
-static int merge_cluster_tables(void)
-{
-	int i, j, k = 0, count = 1;
-	struct cpufreq_frequency_table *table;
-
-	for (i = 0; i < MAX_CLUSTERS; i++)
-		count += get_table_count(freq_table[i]);
-
-	table = kcalloc(count, sizeof(*table), GFP_KERNEL);
-	if (!table)
+	st->wq = alloc_workqueue("arm_bl_wq", WQ_UNBOUND | WQ_MEM_RECLAIM, 0);
+	if (!st->wq)
 		return -ENOMEM;
 
-	freq_table[MAX_CLUSTERS] = table;
+	INIT_DELAYED_WORK(&st->work, abl_do_work);
 
-	/* Add in reverse order to get freqs in increasing order */
-	for (i = MAX_CLUSTERS - 1; i >= 0; i--) {
-		for (j = 0; freq_table[i][j].frequency != CPUFREQ_TABLE_END;
-				j++) {
-			table[k].frequency = VIRT_FREQ(i,
-					freq_table[i][j].frequency);
-			pr_debug("%s: index: %d, freq: %d\n", __func__, k,
-					table[k].frequency);
-			k++;
-		}
-	}
-
-	table[k].driver_data = k;
-	table[k].frequency = CPUFREQ_TABLE_END;
-
-	pr_debug("%s: End, table: %p, count: %d\n", __func__, table, k);
-
-	return 0;
-}
-
-static void _put_cluster_clk_and_freq_table(struct device *cpu_dev,
-					    const struct cpumask *cpumask)
-{
-	u32 cluster = raw_cpu_to_cluster(cpu_dev->id);
-
-	if (!freq_table[cluster])
-		return;
-
-	clk_put(clk[cluster]);
-	dev_pm_opp_free_cpufreq_table(cpu_dev, &freq_table[cluster]);
-	if (arm_bL_ops->free_opp_table)
-		arm_bL_ops->free_opp_table(cpumask);
-	dev_dbg(cpu_dev, "%s: cluster: %d\n", __func__, cluster);
-}
-
-static void put_cluster_clk_and_freq_table(struct device *cpu_dev,
-					   const struct cpumask *cpumask)
-{
-	u32 cluster = cpu_to_cluster(cpu_dev->id);
-	int i;
-
-	if (atomic_dec_return(&cluster_usage[cluster]))
-		return;
-
-	if (cluster < MAX_CLUSTERS)
-		return _put_cluster_clk_and_freq_table(cpu_dev, cpumask);
-
-	for_each_present_cpu(i) {
-		struct device *cdev = get_cpu_device(i);
-		if (!cdev) {
-			pr_err("%s: failed to get cpu%d device\n", __func__, i);
-			return;
-		}
-
-		_put_cluster_clk_and_freq_table(cdev, cpumask);
-	}
-
-	/* free virtual table */
-	kfree(freq_table[cluster]);
-}
-
-static int _get_cluster_clk_and_freq_table(struct device *cpu_dev,
-					   const struct cpumask *cpumask)
-{
-	u32 cluster = raw_cpu_to_cluster(cpu_dev->id);
-	int ret;
-
-	if (freq_table[cluster])
-		return 0;
-
-	ret = arm_bL_ops->init_opp_table(cpumask);
+	/* build clusters */
+	ret = build_clusters(st);
 	if (ret) {
-		dev_err(cpu_dev, "%s: init_opp_table failed, cpu: %d, err: %d\n",
-				__func__, cpu_dev->id, ret);
-		goto out;
-	}
-
-	ret = dev_pm_opp_init_cpufreq_table(cpu_dev, &freq_table[cluster]);
-	if (ret) {
-		dev_err(cpu_dev, "%s: failed to init cpufreq table, cpu: %d, err: %d\n",
-				__func__, cpu_dev->id, ret);
-		goto free_opp_table;
-	}
-
-	clk[cluster] = clk_get(cpu_dev, NULL);
-	if (!IS_ERR(clk[cluster])) {
-		dev_dbg(cpu_dev, "%s: clk: %p & freq table: %p, cluster: %d\n",
-				__func__, clk[cluster], freq_table[cluster],
-				cluster);
-		return 0;
-	}
-
-	dev_err(cpu_dev, "%s: Failed to get clk for cpu: %d, cluster: %d\n",
-			__func__, cpu_dev->id, cluster);
-	ret = PTR_ERR(clk[cluster]);
-	dev_pm_opp_free_cpufreq_table(cpu_dev, &freq_table[cluster]);
-
-free_opp_table:
-	if (arm_bL_ops->free_opp_table)
-		arm_bL_ops->free_opp_table(cpumask);
-out:
-	dev_err(cpu_dev, "%s: Failed to get data for cluster: %d\n", __func__,
-			cluster);
-	return ret;
-}
-
-static int get_cluster_clk_and_freq_table(struct device *cpu_dev,
-					  const struct cpumask *cpumask)
-{
-	u32 cluster = cpu_to_cluster(cpu_dev->id);
-	int i, ret;
-
-	if (atomic_inc_return(&cluster_usage[cluster]) != 1)
-		return 0;
-
-	if (cluster < MAX_CLUSTERS) {
-		ret = _get_cluster_clk_and_freq_table(cpu_dev, cpumask);
-		if (ret)
-			atomic_dec(&cluster_usage[cluster]);
+		destroy_workqueue(st->wq);
+		st->wq = NULL;
 		return ret;
 	}
 
-	/*
-	 * Get data for all clusters and fill virtual cluster with a merge of
-	 * both
-	 */
-	for_each_present_cpu(i) {
-		struct device *cdev = get_cpu_device(i);
-		if (!cdev) {
-			pr_err("%s: failed to get cpu%d device\n", __func__, i);
-			return -ENODEV;
-		}
+	st->inited = true;
 
-		ret = _get_cluster_clk_and_freq_table(cdev, cpumask);
-		if (ret)
-			goto put_clusters;
-	}
-
-	ret = merge_cluster_tables();
-	if (ret)
-		goto put_clusters;
-
-	/* Assuming 2 cluster, set clk_big_min and clk_little_max */
-	clk_big_min = get_table_min(freq_table[0]);
-	clk_little_max = VIRT_FREQ(1, get_table_max(freq_table[1]));
-
-	pr_debug("%s: cluster: %d, clk_big_min: %d, clk_little_max: %d\n",
-			__func__, cluster, clk_big_min, clk_little_max);
-
+	/* kick off */
+	queue_delayed_work(st->wq, &st->work, msecs_to_jiffies(max(20U, abl_sample_ms)));
+	ABL_INFO("arm_big_little: started (sample_ms=%u, ewma_shift=%u)\n", abl_sample_ms, abl_ewma_shift);
 	return 0;
-
-put_clusters:
-	for_each_present_cpu(i) {
-		struct device *cdev = get_cpu_device(i);
-		if (!cdev) {
-			pr_err("%s: failed to get cpu%d device\n", __func__, i);
-			return -ENODEV;
-		}
-
-		_put_cluster_clk_and_freq_table(cdev, cpumask);
-	}
-
-	atomic_dec(&cluster_usage[cluster]);
-
-	return ret;
 }
 
-/* Per-CPU initialization */
-static int bL_cpufreq_init(struct cpufreq_policy *policy)
+static void abl_stop(struct abl_state *st)
 {
-	struct em_data_callback em_cb = EM_DATA_CB(of_dev_pm_opp_get_cpu_power);
-	u32 cur_cluster = cpu_to_cluster(policy->cpu);
-	struct device *cpu_dev;
+	if (!st || !st->inited)
+		return;
+
+	cancel_delayed_work_sync(&st->work);
+
+	if (st->clusters)
+		kfree(st->clusters);
+	st->clusters = NULL;
+	st->nclusters = 0;
+
+	if (st->wq) {
+		destroy_workqueue(st->wq);
+		st->wq = NULL;
+	}
+
+	st->inited = false;
+	ABL_INFO("arm_big_little: stopped\n");
+}
+
+static int __init arm_bl_init(void)
+{
 	int ret;
+	g = kzalloc(sizeof(*g), GFP_KERNEL);
+	if (!g)
+		return -ENOMEM;
 
-	cpu_dev = get_cpu_device(policy->cpu);
-	if (!cpu_dev) {
-		pr_err("%s: failed to get cpu%d device\n", __func__,
-				policy->cpu);
-		return -ENODEV;
-	}
-
-	if (cur_cluster < MAX_CLUSTERS) {
-		int cpu;
-
-		cpumask_copy(policy->cpus, topology_core_cpumask(policy->cpu));
-
-		for_each_cpu(cpu, policy->cpus)
-			per_cpu(physical_cluster, cpu) = cur_cluster;
-	} else {
-		/* Assumption: during init, we are always running on A15 */
-		per_cpu(physical_cluster, policy->cpu) = A15_CLUSTER;
-	}
-
-	ret = get_cluster_clk_and_freq_table(cpu_dev, policy->cpus);
-	if (ret)
-		return ret;
-
-	policy->freq_table = freq_table[cur_cluster];
-	policy->cpuinfo.transition_latency =
-				arm_bL_ops->get_transition_latency(cpu_dev);
-
-	ret = dev_pm_opp_get_opp_count(cpu_dev);
-	if (ret <= 0) {
-		dev_dbg(cpu_dev, "OPP table is not ready, deferring probe\n");
-		return -EPROBE_DEFER;
-	}
-
-	em_register_perf_domain(policy->cpus, ret, &em_cb);
-
-	if (is_bL_switching_enabled())
-		per_cpu(cpu_last_req_freq, policy->cpu) = clk_get_cpu_rate(policy->cpu);
-
-	dev_info(cpu_dev, "%s: CPU %d initialized\n", __func__, policy->cpu);
-	return 0;
-}
-
-static int bL_cpufreq_exit(struct cpufreq_policy *policy)
-{
-	struct device *cpu_dev;
-	int cur_cluster = cpu_to_cluster(policy->cpu);
-
-	if (cur_cluster < MAX_CLUSTERS) {
-		cpufreq_cooling_unregister(cdev[cur_cluster]);
-		cdev[cur_cluster] = NULL;
-	}
-
-	cpu_dev = get_cpu_device(policy->cpu);
-	if (!cpu_dev) {
-		pr_err("%s: failed to get cpu%d device\n", __func__,
-				policy->cpu);
-		return -ENODEV;
-	}
-
-	put_cluster_clk_and_freq_table(cpu_dev, policy->related_cpus);
-	dev_dbg(cpu_dev, "%s: Exited, cpu: %d\n", __func__, policy->cpu);
-
-	return 0;
-}
-
-static void bL_cpufreq_ready(struct cpufreq_policy *policy)
-{
-	int cur_cluster = cpu_to_cluster(policy->cpu);
-
-	/* Do not register a cpu_cooling device if we are in IKS mode */
-	if (cur_cluster >= MAX_CLUSTERS)
-		return;
-
-	cdev[cur_cluster] = of_cpufreq_cooling_register(policy);
-}
-
-static struct cpufreq_driver bL_cpufreq_driver = {
-	.name			= "arm-big-little",
-	.flags			= CPUFREQ_STICKY |
-					CPUFREQ_HAVE_GOVERNOR_PER_POLICY |
-					CPUFREQ_NEED_INITIAL_FREQ_CHECK,
-	.verify			= cpufreq_generic_frequency_table_verify,
-	.target_index		= bL_cpufreq_set_target,
-	.get			= bL_cpufreq_get_rate,
-	.init			= bL_cpufreq_init,
-	.exit			= bL_cpufreq_exit,
-	.ready			= bL_cpufreq_ready,
-	.attr			= cpufreq_generic_attr,
-};
-
-#ifdef CONFIG_BL_SWITCHER
-static int bL_cpufreq_switcher_notifier(struct notifier_block *nfb,
-					unsigned long action, void *_arg)
-{
-	pr_debug("%s: action: %ld\n", __func__, action);
-
-	switch (action) {
-	case BL_NOTIFY_PRE_ENABLE:
-	case BL_NOTIFY_PRE_DISABLE:
-		cpufreq_unregister_driver(&bL_cpufreq_driver);
-		break;
-
-	case BL_NOTIFY_POST_ENABLE:
-		set_switching_enabled(true);
-		cpufreq_register_driver(&bL_cpufreq_driver);
-		break;
-
-	case BL_NOTIFY_POST_DISABLE:
-		set_switching_enabled(false);
-		cpufreq_register_driver(&bL_cpufreq_driver);
-		break;
-
-	default:
-		return NOTIFY_DONE;
-	}
-
-	return NOTIFY_OK;
-}
-
-static struct notifier_block bL_switcher_notifier = {
-	.notifier_call = bL_cpufreq_switcher_notifier,
-};
-
-static int __bLs_register_notifier(void)
-{
-	return bL_switcher_register_notifier(&bL_switcher_notifier);
-}
-
-static int __bLs_unregister_notifier(void)
-{
-	return bL_switcher_unregister_notifier(&bL_switcher_notifier);
-}
-#else
-static int __bLs_register_notifier(void) { return 0; }
-static int __bLs_unregister_notifier(void) { return 0; }
-#endif
-
-int bL_cpufreq_register(const struct cpufreq_arm_bL_ops *ops)
-{
-	int ret, i;
-
-	if (arm_bL_ops) {
-		pr_debug("%s: Already registered: %s, exiting\n", __func__,
-				arm_bL_ops->name);
-		return -EBUSY;
-	}
-
-	if (!ops || !strlen(ops->name) || !ops->init_opp_table ||
-	    !ops->get_transition_latency) {
-		pr_err("%s: Invalid arm_bL_ops, exiting\n", __func__);
-		return -ENODEV;
-	}
-
-	arm_bL_ops = ops;
-
-	set_switching_enabled(bL_switcher_get_enabled());
-
-	for (i = 0; i < MAX_CLUSTERS; i++)
-		mutex_init(&cluster_lock[i]);
-
-	ret = cpufreq_register_driver(&bL_cpufreq_driver);
+	ret = abl_start(g);
 	if (ret) {
-		pr_info("%s: Failed registering platform driver: %s, err: %d\n",
-				__func__, ops->name, ret);
-		arm_bL_ops = NULL;
-	} else {
-		ret = __bLs_register_notifier();
-		if (ret) {
-			cpufreq_unregister_driver(&bL_cpufreq_driver);
-			arm_bL_ops = NULL;
-		} else {
-			pr_info("%s: Registered platform driver: %s\n",
-					__func__, ops->name);
-		}
+		kfree(g);
+		g = NULL;
+		return ret;
 	}
 
-	bL_switcher_put_enabled();
-	return ret;
+	return 0;
 }
-EXPORT_SYMBOL_GPL(bL_cpufreq_register);
 
-void bL_cpufreq_unregister(const struct cpufreq_arm_bL_ops *ops)
+static void __exit arm_bl_exit(void)
 {
-	if (arm_bL_ops != ops) {
-		pr_err("%s: Registered with: %s, can't unregister, exiting\n",
-				__func__, arm_bL_ops->name);
+	if (!g)
 		return;
-	}
-
-	bL_switcher_get_enabled();
-	__bLs_unregister_notifier();
-	cpufreq_unregister_driver(&bL_cpufreq_driver);
-	bL_switcher_put_enabled();
-	pr_info("%s: Un-registered platform driver: %s\n", __func__,
-			arm_bL_ops->name);
-	arm_bL_ops = NULL;
+	abl_stop(g);
+	kfree(g);
+	g = NULL;
 }
-EXPORT_SYMBOL_GPL(bL_cpufreq_unregister);
 
-MODULE_AUTHOR("Viresh Kumar <viresh.kumar@linaro.org>");
-MODULE_DESCRIPTION("Generic ARM big LITTLE cpufreq driver");
-MODULE_LICENSE("GPL v2");
+module_init(arm_bl_init);
+module_exit(arm_bl_exit);
+

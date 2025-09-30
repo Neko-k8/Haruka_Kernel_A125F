@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0
 #include <linux/file.h>
 #include <linux/fs.h>
 #include <linux/fsnotify_backend.h>
@@ -13,24 +12,42 @@
 #include <linux/seq_file.h>
 #include <linux/proc_fs.h>
 #include <linux/exportfs.h>
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+#include <linux/susfs_def.h>
+#endif
 
 #include "inotify/inotify.h"
+#include "fdinfo.h"
 #include "fsnotify.h"
 
 #if defined(CONFIG_PROC_FS)
 
 #if defined(CONFIG_INOTIFY_USER) || defined(CONFIG_FANOTIFY)
 
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+static void show_fdinfo(struct seq_file *m, struct file *f,
+			void (*show)(struct seq_file *m,
+				     struct fsnotify_mark *mark,
+				     struct file *file))
+#else
 static void show_fdinfo(struct seq_file *m, struct file *f,
 			void (*show)(struct seq_file *m,
 				     struct fsnotify_mark *mark))
+#endif
 {
 	struct fsnotify_group *group = f->private_data;
 	struct fsnotify_mark *mark;
 
+	if (!group)
+		return;
+
 	mutex_lock(&group->mark_mutex);
 	list_for_each_entry(mark, &group->marks_list, g_list) {
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+		show(m, mark, f);
+#else
 		show(m, mark);
+#endif
 		if (seq_has_overflowed(m))
 			break;
 	}
@@ -46,6 +63,7 @@ static void show_mark_fhandle(struct seq_file *m, struct inode *inode)
 	} f;
 	int size, ret, i;
 
+	/* prepare a file-handle */
 	f.handle.handle_bytes = sizeof(f.pad);
 	size = f.handle.handle_bytes >> 2;
 
@@ -67,41 +85,86 @@ static void show_mark_fhandle(struct seq_file *m, struct inode *inode)
 #else
 static void show_mark_fhandle(struct seq_file *m, struct inode *inode)
 {
+	/* nothing */
 }
-#endif
+#endif /* CONFIG_EXPORTFS */
 
 #ifdef CONFIG_INOTIFY_USER
 
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+static void inotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark, struct file *file)
+#else
 static void inotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark)
+#endif
 {
 	struct inotify_inode_mark *inode_mark;
 	struct inode *inode;
 
+	/* only handles inode marks here */
 	if (mark->connector->type != FSNOTIFY_OBJ_TYPE_INODE)
 		return;
 
 	inode_mark = container_of(mark, struct inotify_inode_mark, fsn_mark);
 	inode = igrab(fsnotify_conn_inode(mark->connector));
-	if (inode) {
-		/*
-		 * IN_ALL_EVENTS represents all of the mask bits
-		 * that we expose to userspace.  There is at
-		 * least one bit (FS_EVENT_ON_CHILD) which is
-		 * used only internally to the kernel.
-		 */
+	if (!inode)
+		return;
+
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+	/*
+	 * If running in susfs-limited task state and the inode is flagged as
+	 * SUS, try to resolve real path via the file passed in. If we can,
+	 * print the path-based info (avoids leaking kernel-internal masks).
+	 */
+	if (likely(current->susfs_task_state & TASK_STRUCT_NON_ROOT_USER_APP_PROC) &&
+	    unlikely(inode->i_state & INODE_STATE_SUS_KSTAT) && file) {
+		struct path path;
+		char *pathname = kmalloc(PAGE_SIZE, GFP_KERNEL);
+		char *dpath;
+
+		if (pathname) {
+			dpath = d_path(&file->f_path, pathname, PAGE_SIZE);
+			if (dpath && !kern_path(dpath, 0, &path)) {
+				seq_printf(m, "inotify wd:%x ino:%lx sdev:%x mask:%x ignored_mask:0 ",
+					   inode_mark->wd,
+					   path.dentry->d_inode->i_ino,
+					   path.dentry->d_inode->i_sb->s_dev,
+					   /* print user-visible mask bits */
+					   (mark->mask & IN_ALL_EVENTS));
+				show_mark_fhandle(m, path.dentry->d_inode);
+				seq_putc(m, '\n');
+				path_put(&path);
+				kfree(pathname);
+				iput(inode);
+				return;
+			}
+		}
+		kfree(pathname);
+	}
+#endif /* CONFIG_KSU_SUSFS_SUS_MOUNT */
+
+	/*
+	 * IN_ALL_EVENTS represents the mask bits we expose to userspace.
+	 * Keep compatibility with older kernels by computing it inline.
+	 */
+	{
 		u32 mask = mark->mask & IN_ALL_EVENTS;
 		seq_printf(m, "inotify wd:%x ino:%lx sdev:%x mask:%x ignored_mask:%x ",
 			   inode_mark->wd, inode->i_ino, inode->i_sb->s_dev,
 			   mask, mark->ignored_mask);
 		show_mark_fhandle(m, inode);
 		seq_putc(m, '\n');
-		iput(inode);
 	}
+
+	iput(inode);
 }
 
 void inotify_show_fdinfo(struct seq_file *m, struct file *f)
 {
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 	show_fdinfo(m, f, inotify_fdinfo);
+#else
+	show_fdinfo(m, f, inotify_fdinfo);
+#endif
 }
 
 #endif /* CONFIG_INOTIFY_USER */
@@ -129,6 +192,9 @@ static void fanotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark)
 	} else if (mark->connector->type == FSNOTIFY_OBJ_TYPE_VFSMOUNT) {
 		struct mount *mnt = fsnotify_conn_mount(mark->connector);
 
+		if (!mnt)
+			return;
+
 		seq_printf(m, "fanotify mnt_id:%x mflags:%x mask:%x ignored_mask:%x\n",
 			   mnt->mnt_id, mflags, mark->mask, mark->ignored_mask);
 	}
@@ -138,6 +204,9 @@ void fanotify_show_fdinfo(struct seq_file *m, struct file *f)
 {
 	struct fsnotify_group *group = f->private_data;
 	unsigned int flags = 0;
+
+	if (!group)
+		return;
 
 	switch (group->priority) {
 	case FS_PRIO_0:

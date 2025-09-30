@@ -42,6 +42,11 @@ config IRQ_WORK
 config BUILDTIME_EXTABLE_SORT
 	bool
 
+config HAVE_ARCH_USERFAULTFD_MINOR
+	bool
+	help
+		Arch has userfaultfd minor fault support
+
 config THREAD_INFO_IN_TASK
 	bool
 	help

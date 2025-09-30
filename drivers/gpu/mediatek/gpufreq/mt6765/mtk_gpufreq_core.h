@@ -33,15 +33,15 @@
 /**************************************************
  * MT6765 segment_3 : GPU DVFS OPP table Setting
  **************************************************/
-#define SEG3_GPU_DVFS_FREQ0			(680000)	/* KHz */
-#define SEG3_GPU_DVFS_FREQ1			(500000)	/* KHz */
+#define SEG3_GPU_DVFS_FREQ0			(897000)	/* KHz */
+#define SEG3_GPU_DVFS_FREQ1			(600000)	/* KHz */
 #define SEG3_GPU_DVFS_FREQ2			(400000)	/* KHz */
 
-#define SEG3_GPU_DVFS_VOLT0			(80000)		/* mV x 100 */
-#define SEG3_GPU_DVFS_VOLT1			(70000)		/* mV x 100 */
+#define SEG3_GPU_DVFS_VOLT0			(90625)		/* mV x 100 */
+#define SEG3_GPU_DVFS_VOLT1			(75000)		/* mV x 100 */
 #define SEG3_GPU_DVFS_VOLT2			(65000)		/* mV x 100 */
 
-#define SEG3_GPU_DVFS_VSRAM0			(87500)		/* mV x 100 */
+#define SEG3_GPU_DVFS_VSRAM0			(90625)		/* mV x 100 */
 #define SEG3_GPU_DVFS_VSRAM1			(87500)		/* mV x 100 */
 #define SEG3_GPU_DVFS_VSRAM2			(87500)		/* mV x 100 */
 
@@ -143,27 +143,6 @@
  **************************************************/
 #define MT_GPUFREQ_OPP_STRESS_TEST
 #define MT_GPUFREQ_DYNAMIC_POWER_TABLE_UPDATE
-
-/**************************************************
- * Battery Over Current Protect
- **************************************************/
-#if IS_ENABLED(CONFIG_MTK_BATTERY_OC_POWER_THROTTLING)
-#define MT_GPUFREQ_BATT_OC_LIMIT_FREQ			(485000)/* KHz */
-#endif
-
-/**************************************************
- * Battery Percentage Protect
- **************************************************/
-#if IS_ENABLED(CONFIG_MTK_BATTERY_PERCENTAGE_POWER_THROTTLING)
-#define MT_GPUFREQ_BATT_PERCENT_LIMIT_FREQ		(485000)/* KHz */
-#endif
-
-/**************************************************
- * Low Battery Volume Protect
- **************************************************/
-#if IS_ENABLED(CONFIG_MTK_LOW_BATTERY_POWER_THROTTLING)
-#define MT_GPUFREQ_LOW_BATT_VOLT_LIMIT_FREQ		(485000)/* KHz */
-#endif
 
 /**************************************************
  * Proc Node Definition

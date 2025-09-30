@@ -2,8 +2,45 @@
 VERSION = 4
 PATCHLEVEL = 19
 SUBLEVEL = 188
-EXTRAVERSION =
+EXTRAVERSION = +Haruka_Kernel-
 NAME = "People's Front"
+
+# =====================================================
+# Kernel Makefile snippet – MT6765, GCC 14.3 + Clang snapshot
+# =====================================================
+
+# Phony target
+#PHONY += FORCE
+#FORCE:
+
+.PHONY: $(PHONY)
+
+
+COMMON_WARN_FLAGS := -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-align \
+-Wstrict-prototypes -Wmissing-prototypes -Wimplicit-fallthrough=5 \
+-Wuninitialized -Wsign-conversion -Wconversion
+
+GCC_SPECIFIC_FLAGS := -Wformat-nonliteral -Wformat-security -Wformat-signedness
+
+# Thêm flags vào KBUILD_CFLAGS
+KBUILD_CFLAGS += $(COMMON_WARN_FLAGS) $(GCC_SPECIFIC_FLAGS) -O2 -march=armv8-a+simd
+
+# ==============================
+# LTO / ThinLTO
+# ==============================
+LTO_FLAGS := -flto=thin
+KBUILD_CFLAGS += $(LTO_FLAGS)
+
+
+SANITIZER_FLAGS := -fsanitize=undefined
+# KBUILD_CFLAGS += $(SANITIZER_FLAGS)
+
+# ==============================
+# Hybrid build: Clang compiler + GCC linker
+# ==============================
+# Chỉ cần set khi build, không cần sửa Makefile thêm:
+# make O=out ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu-
+
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
@@ -320,7 +357,7 @@ include scripts/subarch.include
 # Default value for CROSS_COMPILE is not to prefix executables
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 ARCH            ?= arm64
-CROSS_COMPILE   ?= $(srctree)/toolchain/clang/host/linux-x86/clang-r383902/bin/aarch64-linux-gnu-
+CROSS_COMPILE   ?= $(srctree)/toolchain/clang/host/linux-x86/clang-r487747c/bin/aarch64-linux-gnu-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -366,10 +403,10 @@ else
 HOSTCC	= gcc
 HOSTCXX	= g++
 endif
-KBUILD_HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 \
+KBUILD_HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 \
 		-fomit-frame-pointer -std=gnu89 $(HOST_LFS_CFLAGS) \
 		$(HOSTCFLAGS)
-KBUILD_HOSTCXXFLAGS := -O2 $(HOST_LFS_CFLAGS) $(HOSTCXXFLAGS)
+KBUILD_HOSTCXXFLAGS := -O3 $(HOST_LFS_CFLAGS) $(HOSTCXXFLAGS)
 KBUILD_HOSTLDFLAGS  := $(HOST_LFS_LDFLAGS) $(HOSTLDFLAGS)
 KBUILD_HOSTLDLIBS   := $(HOST_LFS_LIBS) $(HOSTLDLIBS)
 
@@ -386,7 +423,7 @@ READELF		= llvm-readelf
 OBJSIZE		= llvm-size
 STRIP		= llvm-strip
 else
-CC		= $(srctree)/toolchain/clang/host/linux-x86/clang-r383902/bin/clang
+CC		= $(srctree)/toolchain/clang/host/linux-x86/clang-r487747c/bin/clang
 LD		= $(CROSS_COMPILE)ld
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
@@ -686,8 +723,30 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS   += -Os
+else ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3_OFAST_SUB_OPTIONS
+KBUILD_CFLAGS   += -O3 -fno-signed-zeros -fassociative-math -fno-trapping-math -freciprocal-math -fno-math-errno $(call cc-disable-warning,maybe-uninitialized,)
+KBUILD_CPPFLAGS += -O3
+KBUILD_AFLAGS   += -O3 -mcpu=cortex-a53
 else
 KBUILD_CFLAGS   += -O2
+endif
+
+ifeq ($(cc-name),clang)
+# Add Some optimization flags for clang
+KBUILD_CFLAGS	+= -mcpu=cortex-a53 -foptimize-sibling-calls \
+-pipe \
+-ffunction-sections \
+-ffp-model=fast
+
+endif
+
+KBUILD_CFLAGS	+= -fasynchronous-unwind-tables -fexceptions -fno-semantic-interposition -D_FORTIFY_SOURCE=2 \
+-fno-strict-aliasing \
+-pthread -Wall -Wformat-security -fwrapv --param=ssp-buffer-size=32 \
+-D_REENTRANT
+
+ifdef CONFIG_CC_WERROR
+KBUILD_CFLAGS	+= -Werror
 endif
 
 # Tell gcc to never replace conditional load with a non-conditional one

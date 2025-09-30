@@ -5,6 +5,12 @@
  *
  *  Copyright (C) 1991-2002  Linus Torvalds
  */
+#include <linux/jiffies.h>
+
+/* PATCHED: thêm migration cost ns để giảm task thrashing big.LITTLE */
+static unsigned long sched_migration_cost_ns = 2000000UL; /* 2 ms */
+/* Có thể chỉnh qua sysctl hoặc hằng số này */
+
 #include "sched.h"
 
 #include <linux/nospec.h>

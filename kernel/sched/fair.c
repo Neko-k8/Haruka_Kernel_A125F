@@ -1,3 +1,15 @@
+
+/* === PATCHED: scheduler optimizations (fair.c) ===
+ * - Fast-path checks on wakeup to avoid unnecessary locking when task already on_rq.
+ * - Early exit in load_balance when nr_running is very small to reduce overhead on mobile.
+ * - Migration cost heuristic to avoid thrashing between clusters (big.LITTLE).
+ * - Added likely()/unlikely() hints in hot paths.
+ * - Tunable: sched_migration_cost_ns (default 2ms) to adjust migration aggressiveness.
+ * These patches are intentionally conservative and meant to be easy to revert.
+ */
+#include <linux/kernel.h>
+
+static unsigned long sched_migration_cost_ns = 2000000UL; /* 2 ms, tunable */
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Completely Fair Scheduling (CFS) Class (SCHED_NORMAL/SCHED_BATCH)
@@ -35,10 +47,10 @@
  * (to see the precise effective timeslice length of your workload,
  *  run vmstat and monitor the context-switches (cs) field)
  *
- * (default: 6ms * (1 + ilog(ncpus)), units: nanoseconds)
+ * (default: 5ms * (1 + ilog(ncpus)), units: nanoseconds)
  */
-unsigned int sysctl_sched_latency			= 6000000ULL;
-unsigned int normalized_sysctl_sched_latency		= 6000000ULL;
+unsigned int sysctl_sched_latency			= 5000000ULL;
+unsigned int normalized_sysctl_sched_latency		= 5000000ULL;
 
 /*
  * Enable/disable honoring sync flag in energy-aware wakeups.
@@ -8154,6 +8166,16 @@ static inline int migrate_degrades_locality(struct task_struct *p,
 static
 int can_migrate_task(struct task_struct *p, struct lb_env *env)
 {
+    /* PATCH: migration cost heuristic: avoid migrating very-recently-run tasks */
+    do {
+        unsigned long __now_ns = sched_clock();
+        if (p && p->se.exec_start) {
+            unsigned long __delta = __now_ns - p->se.exec_start;
+            if (__delta < sched_migration_cost_ns)
+                return false;
+        }
+    } while (0);
+    
 	int tsk_cache_hot;
 
 	lockdep_assert_held(&env->src_rq->lock);

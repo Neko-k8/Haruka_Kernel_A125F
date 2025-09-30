@@ -1,4 +1,6 @@
 /*
+ * bio.h - block I/O helpers and inline implementations
+ *
  * Copyright (C) 2001 Jens Axboe <axboe@suse.de>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -11,13 +13,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public Licens
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-
  */
+
 #ifndef __LINUX_BIO_H
 #define __LINUX_BIO_H
 
+#include <linux/version.h>
 #include <linux/highmem.h>
 #include <linux/mempool.h>
 #include <linux/ioprio.h>
@@ -167,6 +168,12 @@ static inline bool bio_full(struct bio *bio)
 #define bio_for_each_segment_all(bvl, bio, i)				\
 	for (i = 0, bvl = (bio)->bi_io_vec; i < (bio)->bi_vcnt; i++, bvl++)
 
+/*
+ * Advance the bvec iterator for a bio.
+ * Note: in older kernels bvec_iter_advance is the primitive available.
+ * Some newer code uses bvec_iter_advance_single; to be compatible with
+ * 4.19 we call the existing bvec_iter_advance helper here.
+ */
 static inline void bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
 				    unsigned bytes)
 {
@@ -176,6 +183,7 @@ static inline void bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
 		iter->bi_size -= bytes;
 		iter->bi_done += bytes;
 	} else {
+		/* forward to bvec_iter_advance (available in 4.19) */
 		bvec_iter_advance(bio->bi_io_vec, iter, bytes);
 		/* TODO: It is reasonable to complete bio with error here. */
 	}
@@ -195,14 +203,47 @@ static inline bool bio_rewind_iter(struct bio *bio, struct bvec_iter *iter,
 	return bvec_iter_rewind(bio->bi_io_vec, iter, bytes);
 }
 
+/* @bytes should be less or equal to bvec[i->bi_idx].bv_len */
+static inline void bio_advance_iter_single(const struct bio *bio,
+					   struct bvec_iter *iter,
+					   unsigned int bytes)
+{
+	/* keep sector accounting */
+	iter->bi_sector += bytes >> 9;
+
+	if (bio_no_advance_iter((struct bio *)bio)) {
+		/* for dataless requests we just update the size */
+		iter->bi_size -= bytes;
+	} else {
+		/*
+		 * On kernel 4.19 there is no bvec_iter_advance_single helper.
+		 * The existing primitive bvec_iter_advance(bv, iter, bytes)
+		 * accepts the bio_vec array as first parameter; call it
+		 * directly — semantics compatible for advancing by 'bytes'
+		 * within the bio.
+		 *
+		 * Using the bvec_iter_advance primitive avoids introducing
+		 * extra external symbols and keeps compatibility.
+		 */
+		bvec_iter_advance(bio->bi_io_vec, iter, bytes);
+	}
+}
+
 #define __bio_for_each_segment(bvl, bio, iter, start)			\
 	for (iter = (start);						\
 	     (iter).bi_size &&						\
 		((bvl = bio_iter_iovec((bio), (iter))), 1);		\
-	     bio_advance_iter((bio), &(iter), (bvl).bv_len))
+	     bio_advance_iter_single((bio), &(iter), (bvl).bv_len))
 
 #define bio_for_each_segment(bvl, bio, iter)				\
 	__bio_for_each_segment(bvl, bio, iter, (bio)->bi_iter)
+
+#define __bio_for_each_bvec(bvl, bio, iter, start)		\
+	for (iter = (start);						\
+	     (iter).bi_size &&						\
+		((bvl = mp_bvec_iter_bvec((bio)->bi_io_vec, (iter))), 1); \
+	     bio_advance_iter_single((bio), &(iter), (bvl).bv_len))
+
 
 #define bio_iter_last(bvec, iter) ((iter).bi_size == (bvec).bv_len)
 
@@ -875,3 +916,4 @@ static inline int bio_integrity_add_page(struct bio *bio, struct page *page,
 
 #endif /* CONFIG_BLOCK */
 #endif /* __LINUX_BIO_H */
+

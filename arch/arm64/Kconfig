@@ -1,5 +1,6 @@
 config ARM64
 	def_bool y
+	select HAVE_ARCH_USERFAULTFD_MINOR if USERFAULTF
 	select ACPI_CCA_REQUIRED if ACPI
 	select ACPI_GENERIC_GSI if ACPI
 	select ACPI_GTDT if ACPI
