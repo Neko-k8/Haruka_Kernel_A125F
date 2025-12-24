@@ -7,6 +7,7 @@
 
 #include <linux/tracepoint.h>
 
+#if !defined(CONFIG_MALI_BIFROST_R38P1)
 TRACE_EVENT(gpu_frequency,
 
 	TP_PROTO(unsigned int state, unsigned int gpu_id),
@@ -25,6 +26,7 @@ TRACE_EVENT(gpu_frequency,
 
 	TP_printk("state=%u gpu_id=%u", __entry->state, __entry->gpu_id)
 );
+#endif
 
 TRACE_EVENT(gpu_work_period,
 
