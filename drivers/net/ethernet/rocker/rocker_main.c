@@ -1526,8 +1526,7 @@ static void rocker_world_port_post_fini(struct rocker_port *rocker_port)
 {
 	struct rocker_world_ops *wops = rocker_port->rocker->wops;
 
-	if (!wops->port_post_fini)
-		return;
+	if (wops->port_post_fini)
 	wops->port_post_fini(rocker_port);
 	kfree(rocker_port->wpriv);
 }
