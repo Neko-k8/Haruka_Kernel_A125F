@@ -244,10 +244,12 @@ int bpf_percpu_cgroup_storage_update(struct bpf_map *_map, void *key,
 	return 0;
 }
 
-static int cgroup_storage_get_next_key(struct bpf_map *_map, void *key,
+static int cgroup_storage_get_next_key(struct bpf_map *_map, void *_key,
 				       void *_next_key)
 {
 	struct bpf_cgroup_storage_map *map = map_to_storage(_map);
+	struct bpf_cgroup_storage_key *key = _key;
+	struct bpf_cgroup_storage_key *next = _next_key;
 	struct bpf_cgroup_storage *storage;
 
 	spin_lock_bh(&map->lock);
@@ -260,23 +262,17 @@ static int cgroup_storage_get_next_key(struct bpf_map *_map, void *key,
 		if (!storage)
 			goto enoent;
 
-		storage = list_next_entry(storage, list_map);
-		if (!storage)
+		storage = list_next_entry(storage, list);
+		if (list_entry_is_head(storage, &map->list, list))
 			goto enoent;
 	} else {
 		storage = list_first_entry(&map->list,
-					 struct bpf_cgroup_storage, list_map);
+					 struct bpf_cgroup_storage, list);
 	}
 
 	spin_unlock_bh(&map->lock);
-
-	if (attach_type_isolated(&map->map)) {
-		struct bpf_cgroup_storage_key *next = _next_key;
-		*next = storage->key;
-	} else {
-		__u64 *next = _next_key;
-		*next = storage->key.cgroup_inode_id;
-	}
+	next->attach_type = storage->key.attach_type;
+	next->cgroup_inode_id = storage->key.cgroup_inode_id;
 	return 0;
 
 enoent:
