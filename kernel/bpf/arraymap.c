@@ -269,19 +269,15 @@ static int array_map_update_elem(struct bpf_map *map, void *key, void *value,
 		/* all elements already exist */
 		return -EEXIST;
 
-	if (array->map.map_type == BPF_MAP_TYPE_PERCPU_ARRAY)
-		memcpy(this_cpu_ptr(array->pptrs[index & array->index_mask]),
-		       value, map->value_size);
-	else {
-		if (unlikely(sizeof(array->value) <
-			array->elem_size * (index & array->index_mask)))
-			return -EINVAL;
-
-		memcpy(array->value +
-		       array->elem_size * (index & array->index_mask),
-		       value, map->value_size);
-	}
-	return 0;
+	if (array->map.map_type == BPF_MAP_TYPE_PERCPU_ARRAY) {
+        memcpy(this_cpu_ptr(array->pptrs[index & array->index_mask]),
+               value, map->value_size);
+    	} else {
+        memcpy(array->value +
+               array->elem_size * (index & array->index_mask),
+               value, map->value_size);
+    	}
+    	return 0;
 }
 
 int bpf_percpu_array_update(struct bpf_map *map, void *key, void *value,
