@@ -1784,7 +1784,8 @@ static int ccif_debug(unsigned char hif_id,
 
 	switch (flag) {
 	case CCCI_HIF_DEBUG_SET_WAKEUP:
-		ret = atomic_set(&ccif_ctrl->wakeup_src, para[0]);
+		atomic_set(&ccif_ctrl->wakeup_src, para[0]);
+		ret = 0;                                    
 		break;
 	case CCCI_HIF_DEBUG_RESET:
 		ccci_reset_ccif_hw(ccif_ctrl->md_id, AP_MD1_CCIF,
@@ -1796,6 +1797,7 @@ static int ccif_debug(unsigned char hif_id,
 	}
 	return ret;
 }
+
 static irqreturn_t md_cd_ccif_isr(int irq, void *data)
 {
 	struct md_ccif_ctrl *ccif_ctrl = (struct md_ccif_ctrl *)data;
