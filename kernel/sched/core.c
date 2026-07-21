@@ -781,7 +781,7 @@ DEFINE_STATIC_KEY_FALSE(sched_uclamp_used);
 #define for_each_clamp_id(clamp_id) \
 	for ((clamp_id) = 0; (clamp_id) < UCLAMP_CNT; (clamp_id)++)
 
-static inline unsigned int uclamp_bucket_id(unsigned int clamp_value)
+inline unsigned int uclamp_bucket_id(unsigned int clamp_value)
 {
 	return min_t(unsigned int, clamp_value / UCLAMP_BUCKET_DELTA, UCLAMP_BUCKETS - 1);
 }
@@ -791,14 +791,14 @@ static inline unsigned int uclamp_bucket_base_value(unsigned int clamp_value)
 	return UCLAMP_BUCKET_DELTA * uclamp_bucket_id(clamp_value);
 }
 
-static inline unsigned int uclamp_none(enum uclamp_id clamp_id)
+inline unsigned int uclamp_none(enum uclamp_id clamp_id)
 {
 	if (clamp_id == UCLAMP_MIN)
 		return 0;
 	return SCHED_CAPACITY_SCALE;
 }
 
-static inline void uclamp_se_set(struct uclamp_se *uc_se,
+inline void uclamp_se_set(struct uclamp_se *uc_se,
 				 unsigned int value, bool user_defined)
 {
 	uc_se->value = value;
@@ -1120,7 +1120,7 @@ uclamp_update_active(struct task_struct *p)
 }
 
 #ifdef CONFIG_UCLAMP_TASK_GROUP
-static inline void
+inline void
 uclamp_update_active_tasks(struct cgroup_subsys_state *css)
 {
 	struct css_task_iter it;
@@ -1134,8 +1134,8 @@ uclamp_update_active_tasks(struct cgroup_subsys_state *css)
 #endif
 
 #if defined(CONFIG_UCLAMP_TASK_GROUP) && !defined(CONFIG_SCHED_TUNE)
-static void cpu_util_update_eff(struct cgroup_subsys_state *css);
-static void uclamp_update_root_tg(void)
+static static void cpu_util_update_eff(struct cgroup_subsys_state *css);
+void uclamp_update_root_tg(void)
 {
 	struct task_group *tg = &root_task_group;
 
@@ -1153,8 +1153,7 @@ static void uclamp_update_root_tg(void) { }
 #endif
 
 int sysctl_sched_uclamp_handler(struct ctl_table *table, int write,
-				void __user *buffer, size_t *lenp,
-				loff_t *ppos)
+				void *buffer, size_t *lenp, loff_t *ppos)
 {
 	bool update_root_tg = false;
 	int old_min, old_max;
@@ -1181,7 +1180,7 @@ int sysctl_sched_uclamp_handler(struct ctl_table *table, int write,
 			      sysctl_sched_uclamp_util_min, false);
 		update_root_tg = true;
 	}
-	if (old_max != sysctl_sched_uclamp_util_max) {
+if (old_max != sysctl_sched_uclamp_util_max) {
 		uclamp_se_set(&uclamp_default[UCLAMP_MAX],
 			      sysctl_sched_uclamp_util_max, false);
 		update_root_tg = true;
@@ -1189,7 +1188,11 @@ int sysctl_sched_uclamp_handler(struct ctl_table *table, int write,
 
 	if (update_root_tg) {
 		static_branch_enable(&sched_uclamp_used);
+#if defined(CONFIG_UCLAMP_TASK_GROUP) && defined(CONFIG_SCHED_TUNE)
+		uclamp_update_root_st();
+#else
 		uclamp_update_root_tg();
+#endif
 	}
 
 	/*

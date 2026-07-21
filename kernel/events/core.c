@@ -3725,7 +3725,7 @@ ctx_first_active(struct perf_event_context *ctx)
 	 * Unconditionally clear rotate_necessary; if ctx_flexible_sched_in()
 	 * finds there are unschedulable events, it will set it again.
 	 */
-	ctx->rotate_necessary = 0;
+	// ctx->rotate_necessary = 0;
 
 	return event;
 }

@@ -655,10 +655,6 @@ static int usb_audio_probe(struct usb_interface *intf,
 	int ifnum;
 	u32 id;
 
-#ifdef CONFIG_USB_DEBUG_DETAILED_LOG
-	pr_info("%s\n", __func__);
-#endif
-
 	alts = &intf->altsetting[0];
 	ifnum = get_iface_desc(alts)->bInterfaceNumber;
 	id = USB_ID(le16_to_cpu(dev->descriptor.idVendor),
@@ -762,17 +758,8 @@ static int usb_audio_probe(struct usb_interface *intf,
 	usb_chip[chip->index] = chip;
 	chip->num_interfaces++;
 	usb_set_intfdata(intf, chip);
-
-	/* enable auto suspend */
-	if (snd_usb_support_autosuspend_quirk(dev))
-		usb_enable_autosuspend(dev);
-	device_wakeup_enable(&dev->dev);
-
 	atomic_dec(&chip->active);
 	mutex_unlock(&register_mutex);
-#ifdef CONFIG_USB_DEBUG_DETAILED_LOG
-	pr_info("%s done\n", __func__);
-#endif
 	return 0;
 
  __error:

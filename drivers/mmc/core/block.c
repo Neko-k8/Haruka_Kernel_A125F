@@ -1672,10 +1672,12 @@ static void mmc_blk_cqe_complete_rq(struct mmc_queue *mq, struct request *req)
 	struct mmc_request *mrq = &mqrq->brq.mrq;
 	struct request_queue *q = req->q;
 	struct mmc_host *host = mq->card->host;
-	enum mmc_issue_type issue_type = mmc_issue_type(mq, req);
 	unsigned long flags;
 	bool put_card;
 	int err;
+	enum mmc_issue_type issue_type;
+
+	issue_type = mmc_issue_type(mq, req);
 
 	mmc_cqe_post_req(host, mrq);
 
@@ -1694,8 +1696,7 @@ static void mmc_blk_cqe_complete_rq(struct mmc_queue *mq, struct request *req)
 	} else if (mrq->data) {
 		if (blk_update_request(req, BLK_STS_OK, mrq->data->bytes_xfered))
 			blk_mq_requeue_request(req, true);
-		else {
-			mt_biolog_cqhci_complete(req->tag);
+		else
 			__blk_mq_end_request(req, BLK_STS_OK);
 	} else if (mq->in_recovery) {
 		blk_mq_requeue_request(req, true);
