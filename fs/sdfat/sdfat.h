@@ -440,7 +440,7 @@ void sdfat_debug_check_clusters(struct inode *inode);
 #ifdef CONFIG_SDFAT_DBG_WARNON
 #define sdfat_debug_warn_on(expr)        WARN_ON(expr)
 #else
-#define sdfat_debug_warn_on(expr)
+#define sdfat_debug_warn_on(expr)        do { } while (0)
 #endif
 
 #else /* CONFIG_SDFAT_DEBUG */
