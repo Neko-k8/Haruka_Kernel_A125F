@@ -1974,9 +1974,6 @@ int hrtimers_dead_cpu(unsigned int scpu)
 	return 0;
 }
 
-	return 0;
-}
-
 #endif /* CONFIG_HOTPLUG_CPU */
 
 void __init hrtimers_init(void)
