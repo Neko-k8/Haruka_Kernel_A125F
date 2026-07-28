@@ -416,7 +416,7 @@ static int gps_each_device_ioctl_inner(struct file *filp, unsigned int cmd, unsi
 		gps_boot_time.now_time = ktime_get_boottime_ns();
 		gps_boot_time.arch_counter = __arch_counter_get_cntvct();
 		#else
-		gps_boot_time.now_time = ktime_get_boot_ns();
+		gps_boot_time.now_time = ktime_get_boottime_ns();
 		gps_boot_time.arch_counter = arch_counter_get_cntvct();
 		#endif
 		local_irq_restore(flags);
