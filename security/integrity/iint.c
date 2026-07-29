@@ -20,6 +20,7 @@
 #include <linux/spinlock.h>
 #include <linux/rbtree.h>
 #include <linux/file.h>
+#include <linux/lsm_hooks.h>
 #include <linux/uaccess.h>
 #include <linux/security.h>
 #include "integrity.h"
