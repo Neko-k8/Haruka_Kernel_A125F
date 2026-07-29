@@ -1223,9 +1223,6 @@ static int context_struct_to_string(struct policydb *p,
 				    struct context *context,
 				    char **scontext, u32 *scontext_len)
 {
-// [ SEC_SELINUX_PORTING_COMMON 
-	gfp_t kmalloc_flag = GFP_ATOMIC;
-// ] SEC_SELINUX_PORTING_COMMON
 	char *scontextp;
 
 	if (scontext)
@@ -1252,11 +1249,7 @@ static int context_struct_to_string(struct policydb *p,
 		return 0;
 
 	/* Allocate space for the context; caller must free this space. */
-// [ SEC_SELINUX_PORTING_COMMON 
-	if (!in_interrupt() && !in_atomic())
-		kmalloc_flag = GFP_KERNEL;
-	scontextp = kmalloc(*scontext_len, kmalloc_flag);
-// ] SEC_SELINUX_PORTING_COMMON 
+	scontextp = kmalloc(*scontext_len, GFP_ATOMIC);
 	if (!scontextp)
 		return -ENOMEM;
 	*scontext = scontextp;
