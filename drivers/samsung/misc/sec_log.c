@@ -230,7 +230,7 @@ static int __init sec_log_buf_init(void)
 
 	//register_console(&sec_console);
 	//unregister_console(&sec_console);
-	register_log_text_hook(emit_sec_log);
+	register_hook_logbuf(emit_sec_log);
 
 	return 0;
 }
