@@ -20,8 +20,9 @@ export PATH="${TC_DIR}/Clang-22/bin:${TC_DIR}/aarch64--glibc--stable-2025.08-1/b
 
 export OPT_FLAGS="-O3 -march=armv8-a+crc+crypto -mcpu=cortex-a53 -mtune=cortex-a53 \
 -fslp-vectorize -fomit-frame-pointer -fno-strict-aliasing \
--mllvm -polly -mllvm -polly-ast-detect-parallel -mllvm -polly-vectorizer=stripmine \
+-mllvm -polly -mllvm -polly-invariant-load-hoisting -mllvm -polly-ast-detect-parallel -mllvm -polly-vectorizer=stripmine \
 -mllvm --enable-epilogue-vectorization"
+
 
 
 export KCFLAGS="-w ${OPT_FLAGS}"
