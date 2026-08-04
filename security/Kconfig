@@ -302,6 +302,5 @@ config LSM
 
 source "security/Kconfig.hardening"
 
-source "security/samsung/dsms/Kconfig" # ADDED BY LEGO AUTOMATICALLY: DO NOT SUBMIT
 endmenu
 
