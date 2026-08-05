@@ -429,25 +429,26 @@ static inline TIMESTAMP_T *tm_now_sb(struct super_block *sb, TIMESTAMP_T *tm)
 #ifdef CONFIG_SDFAT_DBG_CAREFUL
 void sdfat_debug_check_clusters(struct inode *inode);
 #else
-#define sdfat_debug_check_clusters(inode)
+#define sdfat_debug_check_clusters(inode) do { } while (0)
 #endif /* CONFIG_SDFAT_DBG_CAREFUL */
 
 #ifdef CONFIG_SDFAT_DBG_BUGON
 #define sdfat_debug_bug_on(expr)        BUG_ON(expr)
 #else
-#define sdfat_debug_bug_on(expr)
+#define sdfat_debug_bug_on(expr)        do { } while (0)
 #endif
 
 #ifdef CONFIG_SDFAT_DBG_WARNON
-#define sdfat_debug_warn_on(expr)        WARN_ON(expr)
+#define sdfat_debug_warn_on(expr)       WARN_ON(expr)
 #else
-#define sdfat_debug_warn_on(expr)
+#define sdfat_debug_warn_on(expr)      do { } while (0)
 #endif
 
 #else /* CONFIG_SDFAT_DEBUG */
 
-#define sdfat_debug_check_clusters(inode)
-#define sdfat_debug_bug_on(expr)
+#define sdfat_debug_check_clusters(inode) do { } while (0)
+#define sdfat_debug_bug_on(expr)          do { } while (0)
+#define sdfat_debug_warn_on(expr)         do { } while (0)
 
 #endif /* CONFIG_SDFAT_DEBUG */
 
