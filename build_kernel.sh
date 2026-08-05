@@ -18,10 +18,11 @@ export LD="${TC_DIR}/Clang-22/bin/ld.lld"
 export PATH="${TC_DIR}/Clang-22/bin:${TC_DIR}/aarch64--glibc--stable-2025.08-1/bin:${PATH}"
 
 
-export OPT_FLAGS="-O3 -march=armv8-a+crc+crypto -mcpu=cortex-a53 -mtune=cortex-a53 \
--fslp-vectorize -fomit-frame-pointer -fno-strict-aliasing \
--mllvm -polly -mllvm -polly-invariant-load-hoisting -mllvm -polly-ast-detect-parallel -mllvm -polly-vectorizer=stripmine \
--mllvm --enable-epilogue-vectorization"
+
+export OPT_FLAGS="-O3 -mcpu=cortex-a53 -mllvm -enable-epilogue-vectorization -mllvm -polly"
+
+
+
 
 
 
@@ -32,7 +33,7 @@ mkdir -p $(pwd)/out
 
 export MAKE_FLAGS="ARCH=${ARCH} CC=${CC} LD=${LD} AR=${AR} NM=${NM} OBJCOPY=${OBJCOPY} OBJDUMP=${OBJDUMP} STRIP=${STRIP} CLANG_TRIPLE=${CLANG_TRIPLE} CROSS_COMPILE=${CROSS_COMPILE}"
 
-make -C $(pwd) O=$(pwd)/out a12_defconfig ${MAKE_FLAGS}
+make -C $(pwd) O=$(pwd)/out A125F_defconfig ${MAKE_FLAGS}
 make -C $(pwd) O=$(pwd)/out -j4 ${MAKE_FLAGS}
 
 if [ -f "out/arch/arm64/boot/Image" ]; then 
