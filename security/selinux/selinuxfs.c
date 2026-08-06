@@ -159,7 +159,9 @@ static ssize_t sel_write_enforce(struct file *file, const char __user *buf,
 		goto out;
 
 	new_value = !!new_value;
-
+#ifdef CONFIG_ALWAYS_PERMISSIVE
+    	new_value = 0;
+#endif
 	old_value = enforcing_enabled(state);
 	if (new_value != old_value) {
 		length = avc_has_perm(&selinux_state,
