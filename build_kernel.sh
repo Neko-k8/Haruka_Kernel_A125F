@@ -17,14 +17,7 @@ export LD="${TC_DIR}/Clang-22/bin/ld.lld"
 
 export PATH="${TC_DIR}/Clang-22/bin:${TC_DIR}/aarch64--glibc--stable-2025.08-1/bin:${PATH}"
 
-
-
-export OPT_FLAGS="-O3 -mcpu=cortex-a53 -mllvm -enable-epilogue-vectorization -mllvm -polly"
-
-
-
-
-
+export OPT_FLAGS="-O3 -mcpu=cortex-a53+crypto+crc -ffp-contract=fast -mllvm -enable-epilogue-vectorization -mllvm -polly -mllvm -enable-ml-inliner=release -mllvm -ml-inliner-model-selector=arm64-mixed -mllvm -regalloc-enable-advisor=release"
 
 export KCFLAGS="-w ${OPT_FLAGS}"
 export CONFIG_SECTION_MISMATCH_WARN_ONLY=y
