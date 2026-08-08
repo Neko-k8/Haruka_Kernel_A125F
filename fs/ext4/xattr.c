@@ -248,10 +248,12 @@ __ext4_xattr_check_block(struct inode *inode, struct buffer_head *bh,
 	error = ext4_xattr_check_entries(BFIRST(bh), bh->b_data + bh->b_size,
 					 bh->b_data);
 errout:
-	if (error)
+	if (error) {
+		print_bh(inode->i_sb, bh, 0, EXT4_BLOCK_SIZE(inode->i_sb));
 		__ext4_error_inode(inode, function, line, 0,
 				   "corrupted xattr block %llu",
 				   (unsigned long long) bh->b_blocknr);
+	}
 	else
 		set_buffer_verified(bh);
 	return error;
@@ -272,9 +274,6 @@ __xattr_check_inode(struct inode *inode, struct ext4_xattr_ibody_header *header,
 		goto errout;
 	error = ext4_xattr_check_entries(IFIRST(header), end, IFIRST(header));
 errout:
-	if (error)
-		__ext4_error_inode(inode, function, line, 0,
-				   "corrupted in-inode xattr");
 	return error;
 }
 
@@ -2264,6 +2263,7 @@ int ext4_xattr_ibody_set(handle_t *handle, struct inode *inode,
 	struct ext4_xattr_search *s = &is->s;
 	int error;
 
+	/* @fs.sec -- ec294112f1af9d4be72e6292e7e994e522fccbeb -- */
 	if (!EXT4_INODE_HAS_XATTR_SPACE(inode))
 		return -ENOSPC;
 
