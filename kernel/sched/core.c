@@ -3379,7 +3379,6 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
 	return 0;
 }
 
-<<<<<<< HEAD
 void sched_post_fork(struct task_struct *p)
 {
 #ifdef CONFIG_SCHED_BORE
