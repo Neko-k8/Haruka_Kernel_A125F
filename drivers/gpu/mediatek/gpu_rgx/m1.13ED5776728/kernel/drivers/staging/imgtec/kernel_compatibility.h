@@ -44,6 +44,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define __KERNEL_COMPATIBILITY_H__
 
 #include <linux/version.h>
+#include <linux/mm.h>
+
 
 /*
  * Stop supporting an old kernel? Remove the top block.

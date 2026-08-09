@@ -220,6 +220,7 @@ struct last_reboot_reason {
 	/* - SEC Feature - */
 };
 
+#ifdef CONFIG_MTK_AEE_FEATURE
 /* aee sram flags save */
 #define RR_BASE(stage)	\
 	((void *)mboot_params_buffer + mboot_params_buffer->off_##stage)
@@ -243,6 +244,13 @@ struct last_reboot_reason {
 	(strlcpy(RR_LINUX->rr_item[id], str, len))
 
 extern struct mboot_params_buffer *mboot_params_buffer;
+#else
+#define LAST_RR_SET(rr_item, value) do { } while (0)
+#define LAST_RR_SET_WITH_ID(rr_item, id, value) do { } while (0)
+#define LAST_RR_VAL(rr_item) (0)
+#define LAST_RR_MEMCPY(rr_item, str, len) do { } while (0)
+#define LAST_RR_MEMCPY_WITH_ID(rr_item, id, str, len) do { } while (0)
+#endif
 
 extern void mrdump_reboot(void);
 extern void wdt_arch_reset(char mode);
