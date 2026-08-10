@@ -194,7 +194,9 @@ static void ss_monitor_disable(struct usb_function *f)
 		goto ret;
 	if (ss_monitor->accessory_string && !ss_monitor->aoa_start_cmd) {
 		snprintf(aoa_check, sizeof(aoa_check), "AOA_ERR_%x", ss_monitor->accessory_string);
+#ifdef CONFIG_USB_NOTIFY_PROC_LOG
 		store_usblog_notify(NOTIFY_USBMODE_EXTRA, (void *)aoa_check, NULL);
+#endif
 	}
 	ss_monitor->accessory_string = 0;
 	ss_monitor->aoa_start_cmd = 0;
@@ -513,7 +515,9 @@ static int usb_configuration_name(struct usb_configuration *config, struct usb_f
 	else
 		strncat(ss_monitor->usb_mode, "func:empty", 11);
 
+#ifdef CONFIG_USB_NOTIFY_PROC_LOG
 	store_usblog_notify(NOTIFY_USBMODE_EXTRA, (void *)ss_monitor->usb_mode, NULL);
+#endif
 	pr_info("usb: %s : ss_mon: usb_mode: %s\n", __func__, ss_monitor->usb_mode);
 
 	return 0;
