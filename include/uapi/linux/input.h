@@ -30,6 +30,7 @@
  */
 #define SECLOG			"[sec_input]"
 #define INPUT_LOG_BUF_SIZE	512
+#define INPUT_FEATURE_ENABLE_SETTINGS_AOT	(1 << 0) /* Double tap wakeup settings */
 
 #ifdef CONFIG_SEC_DEBUG_TSP_LOG
 #include <linux/input/sec_tsp_log.h>
@@ -38,7 +39,6 @@
  * sys/class/sec/tsp/support_feature
  * bit value should be made a promise with InputFramework.
  */
-#define INPUT_FEATURE_ENABLE_SETTINGS_AOT	(1 << 0) /* Double tap wakeup settings */
 #define INPUT_FEATURE_ENABLE_PRESSURE		(1 << 1) /* homekey pressure */
 #define INPUT_FEATURE_ENABLE_SYNC_RR120		(1 << 2) /* sync reportrate 120hz */
 #define INPUT_FEATURE_ENABLE_VRR		(1 << 3) /* variable refresh rate (support 240hz) */

@@ -10,6 +10,7 @@
  */
 
 #include <linux/input/sec_cmd.h>
+#include <linux/input/sec_tsp_log.h>
 
 #if defined USE_SEC_CMD_QUEUE
 static void sec_cmd_store_function(struct sec_cmd_data *data);

@@ -27,6 +27,7 @@
  * add additional message between timestamp and tsp log.
  * ( Timestamp + additional Message + Tsp logs )
  */
+#ifdef CONFIG_SEC_DEBUG_TSP_LOG
 extern void sec_debug_tsp_log(char *fmt, ...);
 extern void sec_debug_tsp_log_msg(char *msg, char *fmt, ...);
 extern void sec_tsp_log_fix(void);
@@ -39,5 +40,19 @@ extern void sec_debug_tsp_raw_data_msg(char *msg, char *fmt, ...);
 extern void sec_tsp_raw_data_clear(void);
 #endif
 extern void sec_debug_tsp_command_history(char *buf);
+#else
+static inline void sec_debug_tsp_log(char *fmt, ...) { }
+static inline void sec_debug_tsp_log_msg(char *msg, char *fmt, ...) { }
+static inline void sec_tsp_log_fix(void) { }
+static inline void sec_debug_tsp_raw_data(char *fmt, ...) { }
+#ifdef CONFIG_TOUCHSCREEN_DUAL_FOLDABLE
+static inline void sec_debug_tsp_raw_data_msg(char mode, char *msg, char *fmt, ...) { }
+static inline void sec_tsp_raw_data_clear(char mode) { }
+#else
+static inline void sec_debug_tsp_raw_data_msg(char *msg, char *fmt, ...) { }
+static inline void sec_tsp_raw_data_clear(void) { }
+#endif
+static inline void sec_debug_tsp_command_history(char *buf) { }
+#endif
 #endif /* _SEC_TSP_LOG_H_ */
 
