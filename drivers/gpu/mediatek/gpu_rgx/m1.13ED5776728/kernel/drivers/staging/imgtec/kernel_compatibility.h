@@ -46,7 +46,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <linux/version.h>
 #include <linux/mm.h>
 
-
 /*
  * Stop supporting an old kernel? Remove the top block.
  * New incompatible kernel?       Append a new block at the bottom.

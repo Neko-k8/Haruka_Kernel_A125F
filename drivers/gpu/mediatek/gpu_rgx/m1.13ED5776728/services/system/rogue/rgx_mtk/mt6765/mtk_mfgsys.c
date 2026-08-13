@@ -154,28 +154,6 @@ static PVRSRV_DEVICE_NODE *MTKGetRGXDevNode(void)
 	return NULL;
 }
 
-static IMG_UINT32 MTKGetRGXDevIdx(void)
-{
-	static IMG_UINT32 ms_ui32RGXDevIdx = MTK_RGX_DEVICE_INDEX_INVALID;
-
-	if (ms_ui32RGXDevIdx == MTK_RGX_DEVICE_INDEX_INVALID) {
-		PVRSRV_DATA *psPVRSRVData = PVRSRVGetPVRSRVData();
-		IMG_UINT32 i;
-
-		for (i = 0; i < psPVRSRVData->ui32RegisteredDevices; i++) {
-			PVRSRV_DEVICE_NODE *psDeviceNode =
-			&psPVRSRVData->psDeviceNodeList[i];
-
-			if (psDeviceNode && psDeviceNode->psDevConfig) {
-				ms_ui32RGXDevIdx = i;
-				break;
-			}
-		}
-	}
-	return ms_ui32RGXDevIdx;
-}
-
-
 /* extern void ged_log_trace_counter(char *name, int count); */
 static void MTKWriteBackFreqToRGX(PVRSRV_DEVICE_NODE *psDevNode,
 		IMG_UINT32 ui32NewFreq)
@@ -607,8 +585,9 @@ static IMG_UINT32 MTKCalPowerIndex(void)
 	PVRSRV_DEV_POWER_STATE  ePowerState;
 	IMG_BOOL bTimeout;
 	IMG_UINT32 u32Deadline;
+	PVRSRV_DEVICE_NODE *psDevNode;
 	void *pvGPIO_REG = g_pvRegsKM + (uintptr_t)MTK_GPIO_REG_OFFSET;
-	void *pvPOWER_ESTIMATE_RESULT = g_pvRegsBaseKM + (uintptr_t)6328;
+	void *pvPOWER_ESTIMATE_RESULT = g_pvRegsBaseKM + (uintptr_t)0x6328;
 
 	if ((!g_pvRegsKM) || (!g_pvRegsBaseKM))
 		return 0;
@@ -616,7 +595,13 @@ static IMG_UINT32 MTKCalPowerIndex(void)
 	if (PVRSRVPowerLock() != PVRSRV_OK)
 		return 0;
 
-	PVRSRVGetDevicePowerState(MTKGetRGXDevIdx(), &ePowerState);
+	psDevNode = MTKGetRGXDevNode();
+	if (!psDevNode) {
+		PVRSRVPowerUnlock();
+		return 0;
+	}
+
+	PVRSRVGetDevicePowerState(psDevNode, &ePowerState);
 	if (ePowerState != PVRSRV_DEV_POWER_STATE_ON) {
 		PVRSRVPowerUnlock();
 		return 0;

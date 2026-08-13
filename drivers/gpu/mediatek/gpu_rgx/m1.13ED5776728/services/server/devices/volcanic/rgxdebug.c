@@ -249,7 +249,7 @@ static PVRSRV_ERROR _ValidateWithSP(DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
 
 		if (pui32FWCode[i] != ui32Value)
 		{
-			PVR_DUMPDEBUG_LOG("_ValidateWithSP: Mismatch while validating %s at offset 0x%x: CPU 0x%08x (%p), FW 0x%08x (%x)",
+			PVR_DUMPDEBUG_LOG("_ValidateWithSP: Mismatch while validating %s at offset 0x%x: CPU 0x%08x ("IMG_KM_PTR_FMTSPEC"), FW 0x%08x (%x)",
 				 pszDesc,
 				 (i * 4) + ui32StartOffset, pui32FWCode[i], pui32FWCode, ui32Value, ui32FWCodeDevVAAddr);
 			return PVRSRV_ERROR_FW_IMAGE_MISMATCH;
@@ -3298,7 +3298,7 @@ void RGXDebugRequestProcess(DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
 	{
 
 		PVR_DUMPDEBUG_LOG("------[ RGX registers ]------");
-		PVR_DUMPDEBUG_LOG("RGX Register Base Address (Linear):   0x%p", psDevInfo->pvRegsBaseKM);
+		PVR_DUMPDEBUG_LOG("RGX Register Base Address (Linear):   0x"IMG_KM_PTR_FMTSPEC, psDevInfo->pvRegsBaseKM);
 		PVR_DUMPDEBUG_LOG("RGX Register Base Address (Physical): 0x%08lX", (unsigned long)psDevInfo->sRegsPhysBase.uiAddr);
 
 		if (RGX_IS_FEATURE_VALUE_SUPPORTED(psDevInfo, META))

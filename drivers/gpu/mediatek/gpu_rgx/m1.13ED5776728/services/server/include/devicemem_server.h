@@ -172,28 +172,6 @@ DevmemServerGetPrivData(DEVMEMINT_CTX *psDevmemCtx,
                         IMG_HANDLE *phPrivData);
 
 /*
- * DevmemIntAllocDefBackingPage
- *
- * This function allocates default backing page and initializes it
- * with a given default value
- *
- */
-PVRSRV_ERROR DevmemIntAllocDefBackingPage(PVRSRV_DEVICE_NODE *psDevNode,
-                                            PVRSRV_DEF_PAGE *psDefPage,
-                                            IMG_INT	uiInitValue,
-                                            IMG_CHAR *pcDefPageName,
-                                            IMG_BOOL bInitPage);
-/*
- * DevmemIntFreeDefBackingPage
- *
- * Frees a given page
- */
-void DevmemIntFreeDefBackingPage(PVRSRV_DEVICE_NODE *psDevNode,
-                                   PVRSRV_DEF_PAGE *psDefPage,
-                                   IMG_CHAR *pcDefPageName);
-
-
-/*
  * DevmemIntCtxCreate()
  *
  * Create a Server-side Device Memory Context. This is usually the counterpart
@@ -403,6 +381,9 @@ DevmemIntReservationRelease(DEVMEMINT_RESERVATION2 *psDevmemReservation);
 
 PVRSRV_ERROR
 DevmemIntUnreserveRange2(DEVMEMINT_RESERVATION2 *psDevmemReservation);
+
+PVRSRV_ERROR
+DevmemIntGetReservationData(DEVMEMINT_RESERVATION2* psReservation, PMR** ppsPMR, IMG_DEV_VIRTADDR* psDevVAddr);
 
 /*************************************************************************/ /*!
  * @Function    DevmemXIntReserveRange()

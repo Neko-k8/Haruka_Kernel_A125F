@@ -72,7 +72,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PVRSRV_BRIDGE_RGXTA3D_RGXKICKTA3D2			PVRSRV_BRIDGE_RGXTA3D_CMD_FIRST+13
 #define PVRSRV_BRIDGE_RGXTA3D_RGXSETRENDERCONTEXTPROPERTY			PVRSRV_BRIDGE_RGXTA3D_CMD_FIRST+14
 #define PVRSRV_BRIDGE_RGXTA3D_RGXCREATEZSBUFFER2			PVRSRV_BRIDGE_RGXTA3D_CMD_FIRST+15
-#define PVRSRV_BRIDGE_RGXTA3D_CMD_LAST			(PVRSRV_BRIDGE_RGXTA3D_CMD_FIRST+15)
+#define PVRSRV_BRIDGE_RGXTA3D_RGXCREATEFREELIST2			PVRSRV_BRIDGE_RGXTA3D_CMD_FIRST+16
+#define PVRSRV_BRIDGE_RGXTA3D_RGXCREATEHWRTDATASET2			PVRSRV_BRIDGE_RGXTA3D_CMD_FIRST+17
+#define PVRSRV_BRIDGE_RGXTA3D_CMD_LAST			(PVRSRV_BRIDGE_RGXTA3D_CMD_FIRST+17)
 
 /*******************************************
             RGXCreateHWRTDataSet
@@ -432,5 +434,67 @@ typedef struct PVRSRV_BRIDGE_OUT_RGXCREATEZSBUFFER2_TAG
 	IMG_HANDLE hsZSBufferKM;
 	PVRSRV_ERROR eError;
 } __attribute__ ((packed)) PVRSRV_BRIDGE_OUT_RGXCREATEZSBUFFER2;
+
+/*******************************************
+            RGXCreateFreeList2
+ *******************************************/
+
+/* Bridge in structure for RGXCreateFreeList2 */
+typedef struct PVRSRV_BRIDGE_IN_RGXCREATEFREELIST2_TAG
+{
+	IMG_HANDLE hMemCtxPrivData;
+	IMG_UINT32 ui32MaxFLPages;
+	IMG_UINT32 ui32InitFLPages;
+	IMG_UINT32 ui32GrowFLPages;
+	IMG_UINT32 ui32GrowParamThreshold;
+	IMG_HANDLE hsGlobalFreeList;
+	IMG_BOOL bbFreeListCheck;
+	IMG_HANDLE hFreeListAndStateReservation;
+} __attribute__ ((packed)) PVRSRV_BRIDGE_IN_RGXCREATEFREELIST2;
+
+/* Bridge out structure for RGXCreateFreeList2 */
+typedef struct PVRSRV_BRIDGE_OUT_RGXCREATEFREELIST2_TAG
+{
+	IMG_HANDLE hCleanupCookie;
+	PVRSRV_ERROR eError;
+} __attribute__ ((packed)) PVRSRV_BRIDGE_OUT_RGXCREATEFREELIST2;
+
+/*******************************************
+            RGXCreateHWRTDataSet2
+ *******************************************/
+
+/* Bridge in structure for RGXCreateHWRTDataSet2 */
+typedef struct PVRSRV_BRIDGE_IN_RGXCREATEHWRTDATASET2_TAG
+{
+	IMG_DEV_VIRTADDR sVHeapTableDevVAddr;
+	IMG_HANDLE hPMMlistReservation;
+	IMG_HANDLE hPMDataReservation;
+	IMG_HANDLE hPMSecureDataReservation;
+	IMG_HANDLE *phapsFreeLists;
+	IMG_UINT32 ui32PPPScreen;
+	IMG_UINT64 ui64PPPMultiSampleCtl;
+	IMG_UINT32 ui32TPCStride;
+	IMG_DEV_VIRTADDR sTailPtrsDevVAddr;
+	IMG_UINT32 ui32TPCSize;
+	IMG_UINT32 ui32TEScreen;
+	IMG_UINT32 ui32TEAA;
+	IMG_UINT32 ui32TEMTILE1;
+	IMG_UINT32 ui32TEMTILE2;
+	IMG_UINT32 ui32RgnStride;
+	IMG_UINT32 ui32ISPMergeLowerX;
+	IMG_UINT32 ui32ISPMergeLowerY;
+	IMG_UINT32 ui32ISPMergeUpperX;
+	IMG_UINT32 ui32ISPMergeUpperY;
+	IMG_UINT32 ui32ISPMergeScaleX;
+	IMG_UINT32 ui32ISPMergeScaleY;
+	IMG_UINT16 ui16MaxRTs;
+} __attribute__ ((packed)) PVRSRV_BRIDGE_IN_RGXCREATEHWRTDATASET2;
+
+/* Bridge out structure for RGXCreateHWRTDataSet2 */
+typedef struct PVRSRV_BRIDGE_OUT_RGXCREATEHWRTDATASET2_TAG
+{
+	IMG_HANDLE hKmHwRTDataSet;
+	PVRSRV_ERROR eError;
+} __attribute__ ((packed)) PVRSRV_BRIDGE_OUT_RGXCREATEHWRTDATASET2;
 
 #endif /* COMMON_RGXTA3D_BRIDGE_H */

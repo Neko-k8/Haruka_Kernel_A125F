@@ -72,6 +72,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0))
 #include <linux/sched/clock.h>
 #include <linux/sched/signal.h>
+#include <linux/pid.h>
 #else
 #include <linux/sched.h>
 #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)) */
@@ -168,7 +169,8 @@ void OSThreadDumpInfo(DUMPDEBUG_PRINTF_FUNC* pfnDumpDebugPrintf,
 }
 
 PVRSRV_ERROR OSPhyContigPagesAlloc(PVRSRV_DEVICE_NODE *psDevNode, size_t uiSize,
-							PG_HANDLE *psMemHandle, IMG_DEV_PHYADDR *psDevPAddr)
+							PG_HANDLE *psMemHandle, IMG_DEV_PHYADDR *psDevPAddr,
+							IMG_PID uiPid)
 {
 	struct device *psDev = psDevNode->psDevConfig->pvOSDevice;
 	IMG_CPU_PHYADDR sCpuPAddr;
@@ -225,18 +227,20 @@ PVRSRV_ERROR OSPhyContigPagesAlloc(PVRSRV_DEVICE_NODE *psDevNode, size_t uiSize,
 #if defined(PVRSRV_ENABLE_PROCESS_STATS)
 #if !defined(PVRSRV_ENABLE_MEMORY_STATS)
 	PVRSRVStatsIncrMemAllocStatAndTrack(PVRSRV_MEM_ALLOC_TYPE_ALLOC_PAGES_PT_UMA,
-										uiSize,
-										(IMG_UINT64)(uintptr_t) psPage,
-										OSGetCurrentClientProcessIDKM());
+	                                    uiSize,
+	                                    (IMG_UINT64)(uintptr_t) psPage,
+	                                    uiPid);
 #else
 	PVRSRVStatsAddMemAllocRecord(PVRSRV_MEM_ALLOC_TYPE_ALLOC_PAGES_PT_UMA,
 	                             psPage,
-								 sCpuPAddr,
-								 uiSize,
-								 NULL,
-								 OSGetCurrentClientProcessIDKM()
-								 DEBUG_MEMSTATS_VALUES);
+	                             sCpuPAddr,
+	                             uiSize,
+	                             NULL,
+	                             uiPid
+	                             DEBUG_MEMSTATS_VALUES);
 #endif
+#else
+	PVR_UNREFERENCED_PARAMETER(uiPid);
 #endif
 
 	return PVRSRV_OK;
@@ -692,6 +696,22 @@ IMG_PID OSGetCurrentClientProcessIDKM(void)
 IMG_CHAR *OSGetCurrentClientProcessNameKM(void)
 {
 	return OSGetCurrentProcessName();
+}
+
+uintptr_t OSAcquireCurrentPPIDResourceRefKM(void)
+{
+	struct pid *psPPIDResource = find_pid_ns(OSGetCurrentClientProcessIDKM(), &init_pid_ns);
+
+	PVR_ASSERT(psPPIDResource != NULL);
+	/* Take ref on pPid */
+	get_pid(psPPIDResource);
+	return (uintptr_t)psPPIDResource;
+}
+
+void OSReleasePPIDResourceRefKM(uintptr_t psPPIDResource)
+{
+	/* Drop ref on uiProc */
+	put_pid((struct pid*)psPPIDResource);
 }
 
 uintptr_t OSGetCurrentClientThreadIDKM(void)

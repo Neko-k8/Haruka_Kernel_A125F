@@ -1085,7 +1085,7 @@ static void _dump_sync_point(struct dma_fence *fence,
 
 	PVR_DUMPDEBUG_LOG(dump_debug_printf,
 					  dump_debug_file,
-					  "<%p> Seq#=%llu TS=%s State=%s TLN=%s",
+					  "<"IMG_KM_PTR_FMTSPEC"> Seq#=%llu TS=%s State=%s TLN=%s",
 					  fence,
 					  (u64) fence->seqno,
 					  time,

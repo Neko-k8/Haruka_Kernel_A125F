@@ -46,6 +46,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <linux/err.h>
 #include <linux/gfp.h>
 #include <linux/idr.h>
+#include <linux/pid.h>
 
 #include "handle_impl.h"
 #include "allocmem.h"
@@ -402,7 +403,6 @@ static PVRSRV_ERROR DestroyHandleBase(HANDLE_IMPL_BASE *psBase)
 	return PVRSRV_OK;
 }
 
-
 static const HANDLE_IMPL_FUNCTAB g_sHandleFuncTab =
 {
 	.pfnAcquireHandle = AcquireHandle,
@@ -413,7 +413,7 @@ static const HANDLE_IMPL_FUNCTAB g_sHandleFuncTab =
 	.pfnEnableHandlePurging = EnableHandlePurging,
 	.pfnPurgeHandles = PurgeHandles,
 	.pfnCreateHandleBase = CreateHandleBase,
-	.pfnDestroyHandleBase = DestroyHandleBase
+	.pfnDestroyHandleBase = DestroyHandleBase,
 };
 
 PVRSRV_ERROR PVRSRVHandleGetFuncTable(HANDLE_IMPL_FUNCTAB const **ppsFuncs)

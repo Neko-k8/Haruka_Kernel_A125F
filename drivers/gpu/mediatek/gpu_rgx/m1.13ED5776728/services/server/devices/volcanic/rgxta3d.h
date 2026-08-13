@@ -75,7 +75,9 @@ typedef struct _RGX_KM_HW_RT_DATASET_
 #if !defined(SUPPORT_SHADOW_FREELISTS)
     DLLIST_NODE sNodeHWRTData;
 #endif
-
+	DEVMEMINT_RESERVATION2* psPMStateReservation;
+	DEVMEMINT_RESERVATION2* psPMSecureStateReservation;
+	DEVMEMINT_RESERVATION2* psPMMListReservation;
 } RGX_KM_HW_RT_DATASET;
 
 struct _RGX_FREELIST_ {
@@ -88,6 +90,8 @@ struct _RGX_FREELIST_ {
 	/* Free list PM state PMR */
 	PMR						*psFreeListStatePMR;
 	IMG_DEVMEM_OFFSET_T		uiFreeListStatePMROffset;
+
+	DEVMEMINT_RESERVATION2	*psFreeListAndStateReservation;
 
 	/* Freelist config */
 	IMG_UINT32				ui32MaxFLPages;
@@ -165,7 +169,31 @@ typedef struct {
 /* Dump the physical pages of a freelist */
 IMG_BOOL RGXDumpFreeListPageList(RGX_FREELIST *psFreeList);
 
-
+PVRSRV_ERROR RGXCreateHWRTDataSet2(CONNECTION_DATA           *psConnection,
+                                   PVRSRV_DEVICE_NODE        *psDeviceNode,
+                                   IMG_DEV_VIRTADDR           sVHeapTableDevVAddr,
+                                   DEVMEMINT_RESERVATION2    *psPMMListReservation,
+                                   DEVMEMINT_RESERVATION2    *psPMStateReservation,
+                                   DEVMEMINT_RESERVATION2    *psPMSecureStateReservation,
+                                   RGX_FREELIST              *apsFreeLists[RGXFW_MAX_FREELISTS],
+                                   IMG_UINT32                ui32ScreenPixelMax,
+                                   IMG_UINT64                ui64PPPMultiSampleCtl,
+                                   IMG_UINT32                ui32TEStride,
+                                   IMG_DEV_VIRTADDR          sTailPtrsDevVAddr,
+                                   IMG_UINT32                ui32TPCSize,
+                                   IMG_UINT32                ui32TEScreen,
+                                   IMG_UINT32                ui32TEAA,
+                                   IMG_UINT32                ui32TEMTILE1,
+                                   IMG_UINT32                ui32TEMTILE2,
+                                   IMG_UINT32                ui32RgnStride,
+                                   IMG_UINT32                ui32ISPMergeLowerX,
+                                   IMG_UINT32                ui32ISPMergeLowerY,
+                                   IMG_UINT32                ui32ISPMergeUpperX,
+                                   IMG_UINT32                ui32ISPMergeUpperY,
+                                   IMG_UINT32                ui32ISPMergeScaleX,
+                                   IMG_UINT32                ui32ISPMergeScaleY,
+                                   IMG_UINT16                ui16MaxRTs,
+                                   RGX_KM_HW_RT_DATASET      **ppsKmHwRTDataSet);
 
 /* Create HWRTDataSet */
 PVRSRV_ERROR RGXCreateHWRTDataSet(CONNECTION_DATA          *psConnection,
@@ -285,6 +313,19 @@ PVRSRV_ERROR RGXCreateFreeList(CONNECTION_DATA      *psConnection,
 							   PMR					*psFreeListStatePMR,
 							   IMG_DEVMEM_OFFSET_T	uiFreeListStatePMROffset,
 							   RGX_FREELIST			**ppsFreeList);
+
+/* Create free list */
+PVRSRV_ERROR RGXCreateFreeList2(CONNECTION_DATA       *psConnection,
+                               PVRSRV_DEVICE_NODE	     *psDeviceNode,
+                               IMG_HANDLE             hMemCtxPrivData,
+                               IMG_UINT32             ui32MaxFLPages,
+                               IMG_UINT32             ui32InitFLPages,
+                               IMG_UINT32             ui32GrowFLPages,
+                               IMG_UINT32             ui32GrowParamThreshold,
+                               RGX_FREELIST           *psGlobalFreeList,
+                               IMG_BOOL               bCheckFreelist,
+                               DEVMEMINT_RESERVATION2	 *psFreeListAndStateReservation,
+                               RGX_FREELIST           **ppsFreeList);
 
 /* Destroy free list */
 PVRSRV_ERROR RGXDestroyFreeList(RGX_FREELIST *psFreeList);

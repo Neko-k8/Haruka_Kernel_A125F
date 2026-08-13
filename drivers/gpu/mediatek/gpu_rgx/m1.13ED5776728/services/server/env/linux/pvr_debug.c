@@ -683,7 +683,7 @@ static void *_DebugPowerDataCompare_AnyVaCb(PVRSRV_DEVICE_NODE *psDevNode,
 					  va_list va)
 {
 	IMG_UINT64 *pui64CurrentPosition = va_arg(va, IMG_UINT64 *);
-	IMG_UINT64 ui64Position = va_arg(va, IMG_UINT64;
+	IMG_UINT64 ui64Position = va_arg(va, IMG_UINT64);
 	IMG_UINT64 ui64CurrentPosition = *pui64CurrentPosition;
 
 	(*puiCurrentPosition)++;
@@ -1676,7 +1676,7 @@ int PVRDebugCreateDIEntries(void)
 			.pfnShow = _DebugStatusDIShow,
 			.pfnWrite = DebugStatusSet,
 			//'K' expected + Null terminator
-			.ui32WriteLenMax = ((1U)+1U)
+			.ui32WriteLenMax= ((1U)+1U)
 		};
 		eError = DICreateEntry("status", NULL, &sIterator, psPVRSRVData,
 		                       DI_ENTRY_TYPE_GENERIC, &gpsStatusDIEntry);
@@ -1785,7 +1785,7 @@ int PVRDebugCreateDIEntries(void)
 			.pfnShow = DebugLevelDIShow,
 			.pfnWrite = DebugLevelSet,
 			//Max value of 255(3 char) + Null Term
-			.ui32WriteLenMax = ((3U)+1U)
+			.ui32WriteLenMax =((3U)+1U)
 		};
 		eError = DICreateEntry("debug_level", NULL, &sIterator, &gPVRDebugLevel,
 		                       DI_ENTRY_TYPE_GENERIC, &gpsDebugLevelDIEntry);
