@@ -537,7 +537,7 @@ static int m4u_create_sgtable_user(unsigned long va_align,
 	unsigned int left_page_num = table->nents;
 	unsigned long va = va_align;
 
-	mmap_read_lock(current->mm);
+	down_read(&current->mm->mmap_sem);
 
 	while (left_page_num) {
 		unsigned int vma_page_num;
@@ -597,7 +597,7 @@ static int m4u_create_sgtable_user(unsigned long va_align,
 	}
 
 out:
-	mmap_read_unlock(current->mm);
+	up_read(&current->mm->mmap_sem);
 	return ret;
 }
 

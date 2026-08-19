@@ -1776,7 +1776,7 @@ static long aed_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		rcu_read_unlock();
 
 		start = stack_raw.sp;
-		mmap_read_lock(task->mm);
+		down_read(&task->mm->mmap_sem);
 		vma = task->mm->mmap;
 		while (vma) {
 			if (vma->vm_start <= start &&
@@ -1788,7 +1788,7 @@ static long aed_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			if (vma == task->mm->mmap)
 				break;
 		}
-		mmap_read_unlock(task->mm);
+		up_read(&task->mm->mmap_sem);
 
 		if (end == 0) {
 			pr_info("Dump native stack failed:\n");
@@ -1914,7 +1914,7 @@ static long aed_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 				goto EXIT;
 			}
 			memset(maps, 0, MaxMapsSize);
-			mmap_read_lock(rms_mm);
+			down_read(&rms_mm->mmap_sem);
 			vma = rms_mm->mmap;
 			while (vma && (mapcount < rms_mm->map_count)) {
 				show_map_vma(maps, &mapsLength, vma);
@@ -1943,7 +1943,7 @@ static long aed_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 					break;
 			}
 
-			mmap_read_unlock(rms_mm);
+			up_read(&rms_mm->mmap_sem);
 			mmput(rms_mm);
 			if (copy_to_user(thread_info.Userthread_maps,
 				maps, mapsLength)) {
@@ -2212,7 +2212,7 @@ int DumpThreadNativeInfo(struct aee_oops *oops)
 	if (!current_task->mm)
 		return 0;
 
-	mmap_read_lock(current_task->mm);
+	down_read(&current_task->mm->mmap_sem);
 	vma = current_task->mm->mmap;
 	while (vma && (mapcount < current_task->mm->map_count)) {
 		file = vma->vm_file;
@@ -2256,7 +2256,7 @@ int DumpThreadNativeInfo(struct aee_oops *oops)
 		mapcount++;
 
 	}
-	mmap_read_unlock(current_task->mm);
+	up_read(&current_task->mm->mmap_sem);
 
 #ifndef __aarch64__ /* 32bit */
 	userstack_start = (unsigned long)user_ret->ARM_sp;

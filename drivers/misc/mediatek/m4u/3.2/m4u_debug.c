@@ -45,12 +45,12 @@ int m4u_test_alloc_dealloc(int id, unsigned int size)
 	else if (id == 2)
 		va = (unsigned long)vmalloc(size);
 	else if (id == 3) {
-		mmap_write_lock(current->mm);
+		down_write(&current->mm->mmap_sem);
 		va = do_mmap_pgoff(NULL, 0, size,
 				PROT_READ | PROT_WRITE,
 				MAP_SHARED | MAP_LOCKED,
 				0, &populate, NULL);
-		mmap_write_unlock(current->mm);
+		up_write(&current->mm->mmap_sem);
 	}
 
 	M4UINFO("test va=0x%lx,size=0x%x\n", va, size);
@@ -76,9 +76,9 @@ int m4u_test_alloc_dealloc(int id, unsigned int size)
 	else if (id == 2)
 		vfree((void *)va);
 	else if (id == 3) {
-		mmap_read_lock(current->mm);
+		down_read(&current->mm->mmap_sem);
 		ret = do_munmap(current->mm, va, size, NULL);
-		mmap_read_unlock(current->mm);
+		up_read(&current->mm->mmap_sem);
 		if (ret)
 			M4UMSG("do_munmap failed\n");
 	}
@@ -161,12 +161,12 @@ static int m4u_test_map_kernel(void)
 	int ret;
 	unsigned long populate;
 
-	mmap_write_lock(current->mm);
+	down_write(&current->mm->mmap_sem);
 	va = do_mmap_pgoff(NULL, 0, size,
 			PROT_READ | PROT_WRITE,
 			MAP_SHARED | MAP_LOCKED,
 			0, &populate, NULL);
-	mmap_write_unlock(current->mm);
+	up_write(&current->mm->mmap_sem);
 
 	M4UINFO("test va=0x%lx,size=0x%x\n", va, size);
 
@@ -201,9 +201,9 @@ static int m4u_test_map_kernel(void)
 	ret = m4u_mva_unmap_kernel(mva, size, kernel_va);
 
 	ret = m4u_dealloc_mva(client, M4U_PORT_DISP_OVL0, mva);
-	mmap_read_lock(current->mm);
+	down_read(&current->mm->mmap_sem);
 	ret = do_munmap(current->mm, va, size, NULL);
-	mmap_read_unlock(current->mm);
+	up_read(&current->mm->mmap_sem);
 	if (ret)
 		M4UMSG("do_munmap failed\n");
 

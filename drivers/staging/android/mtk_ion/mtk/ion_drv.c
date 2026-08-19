@@ -182,7 +182,7 @@ static int ion_check_user_va(unsigned long va, size_t size)
 	if (unlikely(va_end < va_start))
 		return 0;
 
-	mmap_read_lock(current->mm);
+	down_read(&current->mm->mmap_sem);
 	vma = find_vma(current->mm, va_start);
 	if (!vma || va_start < vma->vm_start ||
 	    va_end > vma->vm_end) {
@@ -190,8 +190,7 @@ static int ion_check_user_va(unsigned long va, size_t size)
 	} else {
 		ret = vma_is_ion_node(vma);
 	}
-	mmap_read_unlock(current->mm);
-
+	up_read(&current->mm->mmap_sem);
 
 	return ret;
 }

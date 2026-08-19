@@ -220,7 +220,7 @@ static int tz_fsdev_get_pfns_and_pin(void *buf, unsigned int size,
 	 * Holding 'mm->mmap_sem' is required to synchronize users who try to register same pages simultaneously.
 	 * Migration is impossible without synchronization due to page refcount holding by both users.
 	 */
-	mmap_write_lock(mm);
+	down_write(&mm->mmap_sem);
 	ret = tzdev_get_user_pages(task, mm, (unsigned long __user)buf,
 			nr_pages, 1, 0, pages, NULL);
 	if (ret) {
@@ -244,7 +244,7 @@ static int tz_fsdev_get_pfns_and_pin(void *buf, unsigned int size,
 			goto out_pin;
 		}
 #endif /* CONFIG_TZDEV_PAGE_MIGRATION */
-	mmap_write_unlock(mm);
+	up_write(&mm->mmap_sem);
 
 	for (i = 0; i < nr_pages; i++)
 		pfns[i] = page_to_pfn(pages[i]);
@@ -263,7 +263,7 @@ out_pin:
 #endif /* CONFIG_TZDEV_PAGE_MIGRATION */
 
 out_pfns:
-	mmap_write_unlock(mm);
+	up_write(&mm->mmap_sem);
 	kfree(pfns);
 out_pages:
 	kfree(pages);

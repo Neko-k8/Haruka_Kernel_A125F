@@ -1212,7 +1212,7 @@ static INLINE PVRSRV_ERROR CacheOpValidateVAOffset(PMR *psPMR,
 	}
 	else if (mm)
 	{
-		mmap_read_lock(mm);
+		down_read(&mm->mmap_sem);
 
 		vma = find_vma(mm, (unsigned long)(uintptr_t)pvAddr);
 
@@ -1228,7 +1228,7 @@ static INLINE PVRSRV_ERROR CacheOpValidateVAOffset(PMR *psPMR,
 			pvAddr = NULL;
 		}
 
-		mmap_read_unlock(mm);
+		up_read(&mm->mmap_sem);
 	}
 #endif
 

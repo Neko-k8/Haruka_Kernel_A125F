@@ -453,11 +453,11 @@ __pvr_access_ok_compat(int type, const void __user * addr, unsigned long size)
  */
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0))
 
-#define mmap_write_lock(mm)   mmap_write_lock(mm)
-#define mmap_write_unlock(mm) mmap_write_unlock(mm)
+#define mmap_write_lock(mm)   down_write(&mm->mmap_sem)
+#define mmap_write_unlock(mm) up_write(&mm->mmap_sem)
 
-#define mmap_read_lock(mm)    mmap_read_lock(mm)
-#define mmap_read_unlock(mm)  mmap_read_unlock(mm)
+#define mmap_read_lock(mm)    down_read(&mm->mmap_sem)
+#define mmap_read_unlock(mm)  up_read(&mm->mmap_sem)
 
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0) */
 
