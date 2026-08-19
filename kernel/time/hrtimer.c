@@ -1474,7 +1474,7 @@ static void __run_hrtimer(struct hrtimer_cpu_base *cpu_base,
 	trace_hrtimer_expire_entry(timer, now);
 	lockdep_hrtimer_enter(timer);
 	restart = fn(timer);
-	lockdep_hrtimer_exit(timer
+	lockdep_hrtimer_exit(timer);
 	trace_hrtimer_expire_exit(timer);
 	check_process_time("hrtimer %ps", ts, fn);
 	raw_spin_lock_irq(&cpu_base->lock);
