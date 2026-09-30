@@ -82,7 +82,9 @@ MODULE_LICENSE("GPL");
 
 static UINT32 md_status_addr;
 
+#ifndef CONFIG_MTK_DISABLE_CONNECTIVITY_LOG
 static UINT32 gDbgLevel = GPS_LOG_DBG;
+#endif
 
 #ifdef CONFIG_MTK_DISABLE_CONNECTIVITY_LOG
 #define GPS_DBG_FUNC(fmt, arg...)

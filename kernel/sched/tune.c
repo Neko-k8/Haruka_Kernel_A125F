@@ -586,7 +586,7 @@ prefer_idle_read(struct cgroup_subsys_state *css, struct cftype *cft)
 
 static int
 prefer_idle_write(struct cgroup_subsys_state *css, struct cftype *cft,
-	    u64 prefer_idle)
+		    u64 prefer_idle)
 {
 	struct schedtune *st = css_st(css);
 	st->prefer_idle = !!prefer_idle;
@@ -604,7 +604,7 @@ boost_read(struct cgroup_subsys_state *css, struct cftype *cft)
 
 static int
 boost_write(struct cgroup_subsys_state *css, struct cftype *cft,
-	    s64 boost)
+		    s64 boost)
 {
 	struct schedtune *st = css_st(css);
 
@@ -654,7 +654,7 @@ static void cpu_util_update_eff(struct cgroup_subsys_state *css)
 		}
 
 		/* Immediately update descendants RUNNABLE tasks */
-		uclamp_update_active_tasks(css, clamps);
+		uclamp_update_active_tasks(css);
 	}
 }
 
@@ -671,6 +671,7 @@ void uclamp_update_root_st(void)
 	cpu_util_update_eff(&root_schedtune.css);
 	rcu_read_unlock();
 }
+
 /*
  * Integer 10^N with a given N exponent by casting to integer the literal "1eN"
  * C expression. Since there is no way to convert a macro argument (N) into a

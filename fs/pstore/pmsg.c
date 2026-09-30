@@ -28,8 +28,9 @@ static ssize_t write_pmsg(struct file *file, const char __user *buf,
 	struct pstore_record record;
 	int ret;
 #ifdef CONFIG_SEC_EXT
-	char sec_buf[256];
-	size_t sec_count = 0;
+	char __maybe_unused sec_buf[256];
+	size_t __maybe_unused sec_count = 0;
+
 #endif
 
 	if (!count)

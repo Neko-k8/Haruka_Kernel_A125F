@@ -1302,7 +1302,7 @@ static int htb_delete(struct Qdisc *sch, unsigned long arg)
 	if (cl->parent)
 		cl->parent->children--;
 
-		htb_deactivate(q, cl);
+	htb_deactivate(q, cl);
 
 	if (cl->cmode != HTB_CAN_SEND)
 		htb_safe_rb_erase(&cl->pq_node,

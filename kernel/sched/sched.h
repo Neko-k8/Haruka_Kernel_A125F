@@ -820,6 +820,9 @@ extern void rto_push_irq_work_func(struct irq_work *work);
 #endif /* CONFIG_SMP */
 
 #ifdef CONFIG_UCLAMP_TASK
+unsigned int uclamp_bucket_id(unsigned int clamp_value);
+unsigned int uclamp_none(enum uclamp_id clamp_id);
+
 /*
  * struct uclamp_bucket - Utilization clamp bucket
  * @value: utilization clamp value for tasks on this clamp bucket
@@ -862,6 +865,10 @@ struct uclamp_rq {
 
 DECLARE_STATIC_KEY_FALSE(sched_uclamp_used);
 #endif /* CONFIG_UCLAMP_TASK */
+
+#ifdef CONFIG_UCLAMP_TASK_GROUP
+void uclamp_update_active_tasks(struct cgroup_subsys_state *css);
+#endif
 
 /*
  * This is the main, per-CPU runqueue data structure.

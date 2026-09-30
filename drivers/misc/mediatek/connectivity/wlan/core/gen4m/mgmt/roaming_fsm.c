@@ -91,7 +91,7 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-static uint8_t *apucDebugRoamingState[ROAMING_STATE_NUM] = {
+static uint8_t *apucDebugRoamingState[ROAMING_STATE_NUM] __maybe_unused = {
 	(uint8_t *) DISP_STRING("IDLE"),
 	(uint8_t *) DISP_STRING("DECISION"),
 	(uint8_t *) DISP_STRING("DISCOVERY"),
@@ -526,7 +526,7 @@ void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	struct CMD_ROAMING_TRANSIT rTransit;
 #if (CFG_TC10_FEATURE == 1)
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct WIFI_VAR *prWifiVar __maybe_unused = &prAdapter->rWifiVar;
 #endif
 
 	prRoamingFsmInfo =
@@ -891,7 +891,7 @@ void roamingFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter,
 	IN struct CMD_ROAMING_TRANSIT *prTransit)
 {
-	uint8_t ucBssIndex = prTransit->ucBssidx;
+	uint8_t ucBssIndex __maybe_unused = prTransit->ucBssidx;
 
 	DBGLOG(ROAMING, LOUD,
 	       "[%d] ROAMING Process Events: Current Time = %d\n",

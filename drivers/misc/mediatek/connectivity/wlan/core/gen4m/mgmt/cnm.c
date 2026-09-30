@@ -520,7 +520,7 @@ OS_SYSTIME g_rLastCsaSysTime;
 #endif
 
 static struct CNM_OPMODE_BSS_CONTROL_T g_arBssOpControl[BSS_DEFAULT_NUM];
-static uint8_t *apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP+1] = {
+static uint8_t *apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP+1] __maybe_unused = {
 	(uint8_t *) DISP_STRING("ANT Ctrl"),
 	(uint8_t *) DISP_STRING("DBDC"),
 	(uint8_t *) DISP_STRING("DBDC Scan"),
@@ -533,7 +533,7 @@ static uint8_t *apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP+1] = {
 	(uint8_t *) DISP_STRING("MAX_CAP")
 };
 
-static uint8_t *apucCnmOpModeReqStatus[CNM_OPMODE_REQ_STATUS_NUM+1] = {
+static uint8_t *apucCnmOpModeReqStatus[CNM_OPMODE_REQ_STATUS_NUM+1] __maybe_unused = {
 	(uint8_t *) DISP_STRING("Success"),
 	(uint8_t *) DISP_STRING("Invalid"),
 	(uint8_t *) DISP_STRING("Running"),
@@ -542,7 +542,7 @@ static uint8_t *apucCnmOpModeReqStatus[CNM_OPMODE_REQ_STATUS_NUM+1] = {
 };
 
 static struct CNM_WMM_QUOTA_CONTROL_T g_arWmmQuotaControl[BSS_DEFAULT_NUM];
-static uint8_t *apucCnmWmmQuotaReq[CNM_WMM_REQ_DEFAULT+1] = {
+static uint8_t *apucCnmWmmQuotaReq[CNM_WMM_REQ_DEFAULT+1] __maybe_unused = {
 	(uint8_t *) DISP_STRING("DBDC"),
 	(uint8_t *) DISP_STRING("N/A"),
 	(uint8_t *) DISP_STRING("Default")

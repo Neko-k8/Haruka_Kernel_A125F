@@ -5106,12 +5106,12 @@ static int perf_event_period(struct perf_event *event, u64 __user *arg)
 
 	if (event->attr.freq) {
 		if (value > sysctl_perf_event_sample_rate)
-		return -EINVAL;
+			return -EINVAL;
 	} else {
-	if (perf_event_check_period(event, value))
-		return -EINVAL;
+		if (perf_event_check_period(event, value))
+			return -EINVAL;
 		if (value & (1ULL << 63))
-		return -EINVAL;
+			return -EINVAL;
 	}
 
 	event_function_call(event, __perf_event_period, &value);

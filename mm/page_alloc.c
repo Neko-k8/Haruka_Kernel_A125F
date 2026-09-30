@@ -75,6 +75,8 @@
 #include <asm/div64.h>
 #include "internal.h"
 
+extern bool need_memory_boosting(void);
+
 /* prevent >1 _updater_ of zone percpu pageset ->high and ->batch fields */
 static DEFINE_MUTEX(pcp_batch_high_lock);
 #define MIN_PERCPU_PAGELIST_FRACTION	(8)

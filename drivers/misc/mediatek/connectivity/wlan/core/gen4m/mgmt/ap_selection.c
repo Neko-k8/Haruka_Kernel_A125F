@@ -222,7 +222,7 @@ struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 	}
 };
 
-static uint8_t *apucBandStr[BAND_NUM] = {
+static uint8_t *apucBandStr[BAND_NUM] __maybe_unused = {
 	(uint8_t *) DISP_STRING("NULL"),
 	(uint8_t *) DISP_STRING("2.4G"),
 	(uint8_t *) DISP_STRING("5G")
@@ -1236,7 +1236,7 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 		prBssDesc->eBand);
 	char extra[16] = {0};
 #else
-	char *extra = "";
+	char *extra __maybe_unused = "";
 #endif
 	int8_t cRssi = -128;
 	enum ROAM_TYPE eRoamType = roamReasonToType[eRoamReason];

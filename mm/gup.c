@@ -4,6 +4,7 @@
 #include <linux/spinlock.h>
 
 #include <linux/mm.h>
+#include <linux/mm_inline.h>
 #include <linux/migrate.h>
 #include <linux/memremap.h>
 #include <linux/pagemap.h>
@@ -34,7 +35,7 @@ static struct page *__alloc_nonmovable_userpage(struct page *page,
 	return alloc_page(GFP_HIGHUSER);
 }
 
-static bool __need_migrate_cma_page(struct page *page,
+static bool __maybe_unused __need_migrate_cma_page(struct page *page,
 				struct vm_area_struct *vma,
 				unsigned long start, unsigned int flags)
 {
@@ -64,7 +65,8 @@ static bool __need_migrate_cma_page(struct page *page,
 	return true;
 }
 
-static int __migrate_cma_pinpage(struct page *page, struct vm_area_struct *vma)
+static int __maybe_unused __migrate_cma_pinpage(struct page *page,
+					     struct vm_area_struct *vma)
 {
 	struct zone *zone = page_zone(page);
 	struct list_head migratepages;
@@ -102,13 +104,14 @@ static int __migrate_cma_pinpage(struct page *page, struct vm_area_struct *vma)
 	return 0;
 }
 #else
-static bool __need_migrate_cma_page(struct page *page,
+static bool __maybe_unused __need_migrate_cma_page(struct page *page,
 				struct vm_area_struct *vma,
 				unsigned long start, unsigned int flags)
 {
 	return false;
 }
-static int __migrate_cma_pinpage(struct page *page, struct vm_area_struct *vma)
+static int __maybe_unused __migrate_cma_pinpage(struct page *page,
+					     struct vm_area_struct *vma)
 {
 	return 0;
 }

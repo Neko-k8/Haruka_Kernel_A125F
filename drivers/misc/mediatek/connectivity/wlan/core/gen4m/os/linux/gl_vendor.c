@@ -950,7 +950,7 @@ void dumpLinkStatsIface(struct STATS_LLS_WIFI_IFACE_STAT *iface)
 void dumpLinkStatsAc(struct STATS_LLS_WMM_AC_STAT *ac_stat,
 		enum ENUM_STATS_LLS_AC ac)
 {
-	static const char * const s[STATS_LLS_WIFI_AC_MAX] = {
+	static const char * const s[STATS_LLS_WIFI_AC_MAX] __maybe_unused = {
 		"VO", "VI", "BE", "BK"};
 
 	DBGLOG(REQ, INFO, "AC[%s] %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u",
@@ -975,7 +975,7 @@ void dumpLinkStatsAc(struct STATS_LLS_WMM_AC_STAT *ac_stat,
 
 void dumpLinkStatsPeerInfo(struct STATS_LLS_PEER_INFO *peer, uint32_t idx)
 {
-	static const char * const type[STATS_LLS_WIFI_PEER_INVALID + 1] = {
+	static const char * const type[STATS_LLS_WIFI_PEER_INVALID + 1] __maybe_unused = {
 		"STA", "AP", "P2P_GO", "P2P_CLIENT", "NAN", "TDLS", "INVALID"};
 
 	DBGLOG(REQ, INFO, "Peer(%u) %u(%s)" MACSTR "%u %u %u [%u]",
@@ -991,7 +991,7 @@ void dumpLinkStatsPeerInfo(struct STATS_LLS_PEER_INFO *peer, uint32_t idx)
 
 void dumpLinkStatsRate(struct STATS_LLS_RATE_STAT *rate, uint32_t idx)
 {
-	static const char * const preamble[] = {
+	static const char * const preamble[] __maybe_unused = {
 		"OFDM", "CCK", "HT", "VHT", "HE", "", "", ""};
 
 	DBGLOG(REQ, INFO, "Rate(%u) %u(%s) %u %u %u %u %u %u %u %u %u %u",

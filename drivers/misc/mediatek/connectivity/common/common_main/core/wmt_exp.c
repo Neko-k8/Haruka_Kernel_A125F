@@ -712,7 +712,7 @@ EXPORT_SYMBOL(mtk_wcn_wmt_ant_ram_ctrl);
 MTK_WCN_BOOL mtk_wcn_wmt_do_reset(ENUM_WMTDRV_TYPE_T type)
 {
 	INT32 iRet = -1;
-	UINT8 *drv_name[] = {
+	UINT8 *drv_name[] __maybe_unused = {
 		[0] = "DRV_TYPE_BT",
 		[1] = "DRV_TYPE_FM",
 		[2] = "DRV_TYPE_GPS",

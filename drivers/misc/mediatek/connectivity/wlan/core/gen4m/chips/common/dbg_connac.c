@@ -372,7 +372,7 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 #undef BUF_SIZE
 }
 
-static int8_t *sta_ctrl_reg[] = {"ENABLE", "*DISABLE", "*PAUSE"};
+static int8_t *sta_ctrl_reg[] __maybe_unused = {"ENABLE", "*DISABLE", "*PAUSE"};
 static struct EMPTY_QUEUE_INFO Queue_Empty_info[] = {
 	{"CPU Q0",  ENUM_UMAC_CPU_PORT_1,     ENUM_UMAC_CTX_Q_0},
 	{"CPU Q1",  ENUM_UMAC_CPU_PORT_1,     ENUM_UMAC_CTX_Q_1},
@@ -623,8 +623,8 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter,
 	for (j = 0; j < 16; j = j + 4) { /* show AC Q info */
 		for (i = 0; i < 32; i++) {
 			if (((ple_stat[j + 1] & (0x1 << i)) >> i) == 0) {
-				uint32_t ac_num = j / 4, ctrl = 0;
-				uint32_t sta_num = i + (j % 4) * 32;
+				uint32_t ac_num __maybe_unused = j / 4, ctrl = 0;
+				uint32_t sta_num __maybe_unused = i + (j % 4) * 32;
 
 				DBGLOG(HAL, INFO, "\tSTA%d AC%d: ",
 					sta_num, ac_num);
@@ -1189,17 +1189,17 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 #undef BUF_SIZE
 }
 
-static char *q_idx_mcu_str[] = {"RQ0", "RQ1", "RQ2", "RQ3", "Invalid"};
-static char *pkt_ft_str[] = {"cut_through", "store_forward",
+static char *q_idx_mcu_str[] __maybe_unused = {"RQ0", "RQ1", "RQ2", "RQ3", "Invalid"};
+static char *pkt_ft_str[] __maybe_unused = {"cut_through", "store_forward",
 	"cmd", "PDA_FW_Download"};
-static char *hdr_fmt_str[] = {
+static char *hdr_fmt_str[] __maybe_unused = {
 	"Non-80211-Frame",
 	"Command-Frame",
 	"Normal-80211-Frame",
 	"enhanced-80211-Frame",
 };
-static char *p_idx_str[] = {"LMAC", "MCU"};
-static char *q_idx_lmac_str[] = {"WMM0_AC0", "WMM0_AC1", "WMM0_AC2", "WMM0_AC3",
+static char *p_idx_str[] __maybe_unused = {"LMAC", "MCU"};
+static char *q_idx_lmac_str[] __maybe_unused = {"WMM0_AC0", "WMM0_AC1", "WMM0_AC2", "WMM0_AC3",
 	"WMM1_AC0", "WMM1_AC1", "WMM1_AC2", "WMM1_AC3",
 	"WMM2_AC0", "WMM2_AC1", "WMM2_AC2", "WMM2_AC3",
 	"WMM3_AC0", "WMM3_AC1", "WMM3_AC2", "WMM3_AC3",
@@ -1292,10 +1292,10 @@ void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint8_t *tmac_info)
 	if (txd_s->TxD1.ft == TMI_FT_LONG) {
 		struct TMAC_TXD_L *txd_l = (struct TMAC_TXD_L *)tmac_info;
 		struct TMAC_TXD_2 *txd_2 = &txd_l->TxD2;
-		struct TMAC_TXD_3 *txd_3 = &txd_l->TxD3;
-		struct TMAC_TXD_4 *txd_4 = &txd_l->TxD4;
+		struct TMAC_TXD_3 *txd_3 __maybe_unused = &txd_l->TxD3;
+		struct TMAC_TXD_4 *txd_4 __maybe_unused = &txd_l->TxD4;
 		struct TMAC_TXD_5 *txd_5 = &txd_l->TxD5;
-		struct TMAC_TXD_6 *txd_6 = &txd_l->TxD6;
+		struct TMAC_TXD_6 *txd_6 __maybe_unused = &txd_l->TxD6;
 
 		DBGLOG(HAL, INFO, "\tTMAC_TXD_2:\n");
 		DBGLOG(HAL, INFO, "\t\tsub_type=%d\n", txd_2->sub_type);

@@ -2145,7 +2145,7 @@ MTK_WCN_BOOL wmt_cdev_rstmsg_snd(ENUM_WMTRSTMSG_TYPE_T msg)
 
 	INT32 i = 0;
 	P_DEV_WMT pDevWmt = &gDevWmt;
-	UINT8 *drv_name[] = {
+	UINT8 *drv_name[] __maybe_unused = {
 		"DRV_TYPE_BT",
 		"DRV_TYPE_FM",
 		"DRV_TYPE_GPS",
@@ -2349,14 +2349,14 @@ ENUM_WMTRSTRET_TYPE_T wmt_lib_cmb_rst(ENUM_WMTRSTSRC_TYPE_T src)
 	INT32 retries = RETRYTIMES;
 	P_DEV_WMT pDevWmt = &gDevWmt;
 	P_OSAL_OP pOp;
-	UINT8 *srcName[] = { "WMTRSTSRC_RESET_BT",
+	UINT8 *srcName[] __maybe_unused = { "WMTRSTSRC_RESET_BT",
 		"WMTRSTSRC_RESET_FM",
 		"WMTRSTSRC_RESET_GPS",
 		"WMTRSTSRC_RESET_WIFI",
 		"WMTRSTSRC_RESET_STP",
 		"WMTRSTSRC_RESET_TEST"
 	};
-	INT32 coredump_mode = mtk_wcn_stp_coredump_flag_get();
+	INT32 coredump_mode __maybe_unused = mtk_wcn_stp_coredump_flag_get();
 
 	WMT_INFO_FUNC("coredump mode == %d. Connsys coredump is %s.",
 			coredump_mode, coredump_mode ? "enabled" : "disabled");

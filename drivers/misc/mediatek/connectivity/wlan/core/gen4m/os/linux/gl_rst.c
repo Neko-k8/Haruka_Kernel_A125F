@@ -625,7 +625,7 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 {
-	u_int8_t fgResult = FALSE;
+	u_int8_t fgResult __maybe_unused = FALSE;
 	int32_t ret;
 #if CFG_WMT_RESET_API_SUPPORT
 	/* wlanOnAtReset(); */

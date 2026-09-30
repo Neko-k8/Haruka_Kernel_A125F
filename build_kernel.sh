@@ -19,7 +19,7 @@ export PATH="${TC_DIR}/neutron-clang-06092026/bin:${PATH}"
 
 export OPT_FLAGS="-O3 -mcpu=cortex-a53+crypto+crc -ffp-contract=fast -mllvm -enable-epilogue-vectorization -mllvm -polly"
 
-export KCFLAGS="-w ${OPT_FLAGS}"
+export KCFLAGS="${OPT_FLAGS}"
 
 JOBS=$(nproc)
 

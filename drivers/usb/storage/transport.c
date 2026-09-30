@@ -48,7 +48,8 @@
 #include <linux/blkdev.h>
 #include "../../scsi/sd.h"
 #include "usb_boost.h"
-#ifdef CONFIG_USB_DEBUG_DETAILED_LOG
+#if defined(CONFIG_USB_DEBUG_DETAILED_LOG) || \
+	defined(CONFIG_USB_HOST_SAMSUNG_FEATURE)
 #include "../core/usb.h"
 #endif
 

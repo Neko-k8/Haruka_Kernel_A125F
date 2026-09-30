@@ -3981,7 +3981,7 @@ int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy
 #define NL80211_TESTMODE_P2P_SCANDONE_INVALID 0
 #define NL80211_TESTMODE_P2P_SCANDONE_STATUS 1
 
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t rStatus __maybe_unused = WLAN_STATUS_SUCCESS;
 	int32_t READY_TO_BEAM = 0;
 
 	struct sk_buff *skb = NULL;

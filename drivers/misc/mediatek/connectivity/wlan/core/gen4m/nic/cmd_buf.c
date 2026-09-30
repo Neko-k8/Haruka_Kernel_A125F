@@ -256,7 +256,8 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
 		struct QUE *prTxCmdQueue = &prAdapter->rTxCmdQueue;
 		struct QUE *prTxCmdDoneQueue = &prAdapter->rTxCmdDoneQueue;
 #endif
-		struct TX_TCQ_STATUS *prTc = &prAdapter->rTxCtrl.rTc;
+		struct TX_TCQ_STATUS *prTc __maybe_unused =
+			&prAdapter->rTxCtrl.rTc;
 
 		fgCmdDumpIsDone = TRUE;
 		cmdBufDumpCmdQueue(prCmdQue, "waiting CMD queue");

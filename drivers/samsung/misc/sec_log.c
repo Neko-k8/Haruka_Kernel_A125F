@@ -176,9 +176,11 @@ static inline void sec_log_hook_logger(const char *text, size_t size)
 		*sec_logger_pos -= sec_logger_size;
 }
 
-static inline void emit_sec_log(char *text, size_t size)
+static inline void emit_sec_log(const char *text, size_t size, int fatal)
 {
 	unsigned int pos = *sec_log_pos;
+
+	(void)fatal;
 
 	if (likely((unsigned int)size + pos <= sec_log_size))
 		memcpy(&sec_log_buf[pos], text, (unsigned int)size);

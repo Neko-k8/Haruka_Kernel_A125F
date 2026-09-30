@@ -87,7 +87,7 @@ static void sm5714_set_level(int level)
     sm5714_current_level = level;
 }
 
-static void sm5714_adjust_voltage()
+static void sm5714_adjust_voltage(struct work_struct *work)
 {
     if(volt_direction == VOLTAGE_DECREASE) {
         sm5714_fled_mode_ctrl(SM5714_FLED_MODE_PREPARE_FLASH, 0);

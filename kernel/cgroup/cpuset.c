@@ -833,19 +833,6 @@ done:
 	return ndoms;
 }
 
-static void cpuset_sched_change_begin(void)
-{
-	cpus_read_lock();
-	mutex_lock(&cpuset_mutex);
-}
-
-static void cpuset_sched_change_end(void)
-{
-	mutex_unlock(&cpuset_mutex);
-	cpus_read_unlock();
-}
-
-
 /*
  * Rebuild scheduler domains.
  *

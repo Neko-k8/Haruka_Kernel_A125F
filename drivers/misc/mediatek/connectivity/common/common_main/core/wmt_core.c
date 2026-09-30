@@ -210,7 +210,7 @@ static UINT8 WMT_EFUSE_CMD[] = { 0x01, 0x0D, 0x08, 0x00,
 	0xBB, 0xBB, 0xBB, 0xBB	/*[8-11] Value */
 };
 
-static UINT8 WMT_EFUSE_EVT[] = { 0x02, 0x0D, 0x08, 0x00,
+static UINT8 WMT_EFUSE_EVT[] __maybe_unused = { 0x02, 0x0D, 0x08, 0x00,
 	0xAA,			/*[4]operation, 0:init, 1:write 2:read */
 	0xBB,			/*[5]Number of register setting */
 	0xCC, 0xCC,		/*[6-7]Address */
@@ -233,7 +233,7 @@ static UINT8 WMT_SET_REG_CMD[] = { 0x01, 0x08, 0x10, 0x00	/*length */
 	    , 0xFF, 0xFF, 0xFF, 0xFF	/*mask */
 };
 
-static UINT8 WMT_SET_REG_WR_EVT[] = { 0x02, 0x08, 0x04, 0x00	/*length */
+static UINT8 WMT_SET_REG_WR_EVT[] __maybe_unused = { 0x02, 0x08, 0x04, 0x00	/*length */
 	    , 0x00		/*S: 0 */
 	    , 0x00		/*type: reg */
 	    , 0x00		/*rev */
@@ -242,7 +242,7 @@ static UINT8 WMT_SET_REG_WR_EVT[] = { 0x02, 0x08, 0x04, 0x00	/*length */
 	    /* , 0x00, 0x00, 0x00, 0x00 *//* value */
 };
 
-static UINT8 WMT_SET_REG_RD_EVT[] = { 0x02, 0x08, 0x04, 0x00	/*length */
+static UINT8 WMT_SET_REG_RD_EVT[] __maybe_unused = { 0x02, 0x08, 0x04, 0x00	/*length */
 	    , 0x00		/*S: 0 */
 	    , 0x00		/*type: reg */
 	    , 0x00		/*rev */
@@ -2522,7 +2522,7 @@ static INT32 wmt_core_gen2_set_mcu_clk(UINT32 kind)
 	UINT32 u4ReadSize = 0;
 	UINT8 evt_buffer[12] = { 0 };
 	MTK_WCN_BOOL fgFail;
-	PUINT8 set_mcu_clk_str[] = {
+	PUINT8 set_mcu_clk_str[] __maybe_unused = {
 		"Enable GEN2 MCU PLL",
 		"SET GEN2 MCU CLK to 26M",
 		"SET GEN2 MCU CLK to 37M",
@@ -2632,7 +2632,7 @@ static INT32 wmt_core_gen3_set_mcu_clk(UINT32 kind)
 	UINT32 u4ReadSize = 0;
 	UINT8 evt_buffer[12] = { 0 };
 	MTK_WCN_BOOL fgFail;
-	PUINT8 set_mcu_clk_str[] = {
+	PUINT8 set_mcu_clk_str[] __maybe_unused = {
 		"SET GEN3 MCU CLK to 26M",
 		"SET GEN3 MCU CLK to 46M",
 		"SET GEN3 MCU CLK to 97M",
@@ -3551,7 +3551,7 @@ done:
 static INT32 opfunc_try_pwr_off(P_WMT_OP pWmtOp)
 {
 	INT32 iRet = 0;
-	UINT32 drvType = pWmtOp->au4OpData[0];
+	UINT32 drvType __maybe_unused = pWmtOp->au4OpData[0];
 
 	if (atomic_read(&g_wifi_on_off_ready) == 1) {
 		WMT_INFO_FUNC("wlan on/off procedure will be started, do not power off now.\n");

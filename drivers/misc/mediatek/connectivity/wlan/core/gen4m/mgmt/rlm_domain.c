@@ -1852,7 +1852,8 @@ u_int8_t rlmDomainTxPwrLimitLoad(
 	uint32_t u4CountryStart = 0, u4CountryEnd = 0, u4Pos = 0;
 	struct TX_PWR_LIMIT_SECTION *prSection =
 		&gTx_Pwr_Limit_Section[ucVersion];
-	uint8_t *prFileName = prAdapter->chip_info->prTxPwrLimitFile;
+	uint8_t *prFileName __maybe_unused =
+		prAdapter->chip_info->prTxPwrLimitFile;
 
 
 	if (!rlmDomainTxPwrLimitGetCountryRange(u4CountryCode, pucBuf,
@@ -1968,7 +1969,7 @@ void rlmDomainTxPwrLimitSetChValues(
 
 	DBGLOG(RLM, TRACE, "ch %d\n", pCmd->ucCentralCh);
 	for (section = 0; section < TX_PWR_LIMIT_SECTION_NUM; section++) {
-		struct TX_PWR_LIMIT_SECTION *pSection =
+		struct TX_PWR_LIMIT_SECTION *pSection __maybe_unused =
 			&gTx_Pwr_Limit_Section[ucVersion];
 		ucElementNum = gTx_Pwr_Limit_Element_Num[ucVersion][section];
 		for (e = 0; e < ucElementNum; e++)
@@ -2001,7 +2002,7 @@ void rlmDomainTxPwrLimitPerRateSetChValues(
 	DBGLOG(RLM, TRACE, "ch %d\n", pCmd->u1CentralCh);
 	count = 0;
 	for (section = 0; section < TX_PWR_LIMIT_SECTION_NUM; section++) {
-		struct TX_PWR_LIMIT_SECTION *pSection =
+		struct TX_PWR_LIMIT_SECTION *pSection __maybe_unused =
 			&gTx_Pwr_Limit_Section[ucVersion];
 		if (rlmDomainTxPwrLimitIsTxBfBackoffSection(ucVersion, section))
 			continue;
@@ -4395,7 +4396,7 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 	uint8_t ucAppliedWay, ucOperation = 0;
 	char carySeperator[2] = { 0, 0 };
 
-	char *pacParsePwrAC[PWR_CFG_PRAM_NUM_AC] = {
+	char *pacParsePwrAC[PWR_CFG_PRAM_NUM_AC] __maybe_unused = {
 		"CCK",
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING == 1)
 		"OFDML",
@@ -4410,7 +4411,7 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 		"HT160L",
 		"HT160H"
 		};
-	char *pacParsePwrAX[PWR_CFG_PRAM_NUM_AX] = {
+	char *pacParsePwrAX[PWR_CFG_PRAM_NUM_AX] __maybe_unused = {
 		"RU26L",
 		"RU26H",
 		"RU26U",
@@ -4935,7 +4936,7 @@ void txPwrCtrlShowList(struct ADAPTER *prAdapter, uint8_t filterType,
 		&prAdapter->rTxPwr_DynamicList
 	};
 	uint8_t ucAppliedWay, ucOperation;
-	int i, count = 0;
+	int i, count __maybe_unused = 0;
 
 	if (filterType == 1)
 		DBGLOG(RLM, TRACE, "Tx Power Ctrl List=[%s], Size=[%d]",
@@ -5622,7 +5623,7 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 			prCmd6E_3);
 #endif
 
-	if (prAdapter->rWifiVar.u2CountryCode != (uint16_t)NULL) {
+	if (prAdapter->rWifiVar.u2CountryCode != 0) {
 		DBGLOG(RLM, TRACE,
 		       "Domain: ValidCC=%c%c, PwrLimitCC=%c%c, PwrLimitChNum=%d\n",
 		       (prAdapter->rWifiVar.u2CountryCode & 0xff00) >> 8,
@@ -5935,7 +5936,7 @@ enum regd_state rlmDomainStateTransition(enum regd_state request_state,
 					 struct regulatory_request *pRequest)
 {
 	enum regd_state next_state, old_state;
-	bool the_same = 0;
+	bool the_same __maybe_unused = 0;
 
 	old_state = g_mtk_regd_control.state;
 	next_state = REGD_STATE_INVALID;

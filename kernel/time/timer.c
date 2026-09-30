@@ -1427,7 +1427,9 @@ static void call_timer_fn(struct timer_list *timer,
 			  unsigned long baseclk)
 {
 	int count = preempt_count();
+#ifdef CONFIG_MTK_SCHED_MONITOR
 	unsigned long long ts;
+#endif
 
 #ifdef CONFIG_LOCKDEP
 	/*

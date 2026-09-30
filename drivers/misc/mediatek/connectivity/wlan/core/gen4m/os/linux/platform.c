@@ -107,7 +107,7 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-static const uint8_t *apucDebugNetdevState[] = {
+static const uint8_t *apucDebugNetdevState[] __maybe_unused = {
 	(uint8_t *) DISP_STRING("NETDEV_UNKNOWN"),
 	(uint8_t *) DISP_STRING("NETDEV_UP"),
 	(uint8_t *) DISP_STRING("NETDEV_DOWN"),

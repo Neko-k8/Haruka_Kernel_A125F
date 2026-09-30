@@ -90,7 +90,7 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-static uint8_t *apucDebugAAState[AA_STATE_NUM] = {
+static uint8_t *apucDebugAAState[AA_STATE_NUM] __maybe_unused = {
 	(uint8_t *) DISP_STRING("AA_IDLE"),
 	(uint8_t *) DISP_STRING("SAA_SEND_AUTH1"),
 	(uint8_t *) DISP_STRING("SAA_WAIT_AUTH2"),
@@ -1029,7 +1029,7 @@ void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 
 	/* We should have the corresponding Sta Record. */
 	if (!prStaRec) {
-		struct WLAN_MAC_MGMT_HEADER *mgmt =
+		struct WLAN_MAC_MGMT_HEADER *mgmt __maybe_unused =
 			(struct WLAN_MAC_MGMT_HEADER *)prSwRfb->pvHeader;
 		DBGLOG(SAA, WARN,
 			"Received a AuthResp: DA[" MACSTR "] bssid[" MACSTR
@@ -1249,7 +1249,7 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 
 	/* We should have the corresponding Sta Record. */
 	if (!prStaRec) {
-		struct WLAN_MAC_MGMT_HEADER *mgmt =
+		struct WLAN_MAC_MGMT_HEADER *mgmt __maybe_unused =
 			(struct WLAN_MAC_MGMT_HEADER *)prSwRfb->pvHeader;
 		DBGLOG(SAA, WARN,
 			"Received a AssocResp: DA[" MACSTR "] bssid[" MACSTR

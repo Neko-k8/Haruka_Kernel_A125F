@@ -55,7 +55,7 @@
 
 #if 1
 /*lint -save -e64 Type mismatch */
-static uint8_t *apucDebugP2pDevState[P2P_DEV_STATE_NUM] = {
+static uint8_t *apucDebugP2pDevState[P2P_DEV_STATE_NUM] __maybe_unused = {
 	(uint8_t *) DISP_STRING("P2P_DEV_STATE_IDLE"),
 	(uint8_t *) DISP_STRING("P2P_DEV_STATE_SCAN"),
 	(uint8_t *) DISP_STRING("P2P_DEV_STATE_REQING_CHANNEL"),
