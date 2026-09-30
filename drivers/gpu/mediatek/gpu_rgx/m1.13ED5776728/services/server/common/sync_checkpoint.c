@@ -153,7 +153,7 @@ typedef struct _SYNC_CHECKPOINT_BLOCK_LIST_
 	SYNC_CHECKPOINT_BLOCK **papsSyncCheckpointBlock; /*!< Array of sync checkpoint blocks */
 } SYNC_CHECKPOINT_BLOCK_LIST;
 
-typedef struct _SYNC_CHECKPOINT_CONTEXT_CTL_
+struct _SYNC_CHECKPOINT_CONTEXT_CTL_
 {
 	SHARED_DEV_CONNECTION					psDeviceNode;
 	PFN_SYNC_CHECKPOINT_FENCE_RESOLVE_FN	pfnFenceResolve;
@@ -178,7 +178,7 @@ typedef struct _SYNC_CHECKPOINT_CONTEXT_CTL_
 	IMG_UINT32								ui32SyncCheckpointPoolRp;
 	POS_SPINLOCK							hSyncCheckpointPoolLock; /*! Protects access to the checkpoint pool control data. */
 #endif
-} _SYNC_CHECKPOINT_CONTEXT_CTL;
+};
 
 /* this is the max number of sync checkpoint records we will search or dump
  * at any time.
@@ -1095,9 +1095,6 @@ PVRSRV_ERROR SyncCheckpointContextDestroy(PSYNC_CHECKPOINT_CONTEXT psSyncCheckpo
 	}
 	else
 	{
-		IMG_INT iRf2 = 0;
-
-		iRf2 = OSAtomicRead(&psContext->hRefCount);
 		SyncCheckpointContextUnref(psSyncCheckpointContext);
 	}
 
@@ -2903,7 +2900,9 @@ static IMG_UINT32 _CleanCheckpointPool(_SYNC_CHECKPOINT_CONTEXT *psContext)
 	DECLARE_DLLIST(sCleanupList);
 	DLLIST_NODE *psThis, *psNext;
 	OS_SPINLOCK_FLAGS uiFlags;
-	IMG_UINT32 ui32ItemsFreed = 0, ui32NullScpCount = 0, ui32PoolCount;
+	IMG_UINT32 ui32ItemsFreed = 0;
+	IMG_UINT32 ui32NullScpCount __maybe_unused = 0;
+	IMG_UINT32 ui32PoolCount __maybe_unused;
 	IMG_BOOL bPoolValid;
 
 	/* Acquire sync checkpoint pool lock */

@@ -8364,7 +8364,7 @@ struct LCM_DRIVER *DISP_GetLcmDrv(void)
 	return NULL;
 }
 
-static int _screen_cap_by_cmdq(unsigned int mva, enum UNIFIED_COLOR_FMT ufmt,
+static int __maybe_unused _screen_cap_by_cmdq(unsigned int mva, enum UNIFIED_COLOR_FMT ufmt,
 			       enum DISP_MODULE_ENUM after_eng)
 {
 	int ret = 0;
@@ -8454,7 +8454,7 @@ out:
 	return 0;
 }
 
-static int _screen_cap_by_cpu(unsigned int mva, enum UNIFIED_COLOR_FMT ufmt,
+static int __maybe_unused _screen_cap_by_cpu(unsigned int mva, enum UNIFIED_COLOR_FMT ufmt,
 	enum DISP_MODULE_ENUM after_eng)
 {
 	int ret = 0;

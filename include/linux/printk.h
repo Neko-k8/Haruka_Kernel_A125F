@@ -8,6 +8,10 @@
 #include <linux/linkage.h>
 #include <linux/cache.h>
 
+#ifdef CONFIG_SEC_EXT
+void register_hook_logbuf(void (*func)(const char *buf, size_t size, int fatal));
+#endif
+
 extern const char linux_banner[];
 extern const char *linux_banner_ptr;
 extern const char linux_proc_banner[];

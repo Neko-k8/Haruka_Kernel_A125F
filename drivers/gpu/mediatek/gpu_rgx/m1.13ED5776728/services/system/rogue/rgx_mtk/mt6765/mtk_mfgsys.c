@@ -67,8 +67,8 @@ void __iomem *topck_base;
 #define MTK_RGX_DEVICE_INDEX_INVALID	-1
 
 static IMG_HANDLE g_RGXutilUser;
-static IMG_HANDLE g_hDVFSTimer;
-static POS_LOCK ghDVFSTimerLock;
+static IMG_HANDLE g_hDVFSTimer __maybe_unused;
+static POS_LOCK ghDVFSTimerLock __maybe_unused;
 static POS_LOCK ghDVFSLock;
 
 static IMG_CPU_PHYADDR gsRegsPBase;
@@ -79,17 +79,17 @@ static void *g_pvRegsKM;
 static void *g_pvRegsBaseKM;
 #endif
 
-static IMG_BOOL g_bTimerEnable = IMG_FALSE;
+static IMG_BOOL g_bTimerEnable __maybe_unused = IMG_FALSE;
 static IMG_BOOL g_bExit = IMG_TRUE;
 static IMG_INT32 g_iSkipCount;
 static IMG_UINT32 g_sys_dvfs_time_ms;
 
 static IMG_UINT32 g_bottom_freq_id;
-static IMG_UINT32 gpu_bottom_freq;
+static IMG_UINT32 gpu_bottom_freq __maybe_unused;
 static IMG_UINT32 g_cust_boost_freq_id;
-static IMG_UINT32 gpu_cust_boost_freq;
+static IMG_UINT32 gpu_cust_boost_freq __maybe_unused;
 static IMG_UINT32 g_cust_upbound_freq_id;
-static IMG_UINT32 gpu_cust_upbound_freq;
+static IMG_UINT32 gpu_cust_upbound_freq __maybe_unused;
 
 static IMG_UINT32 gpu_power;
 static IMG_UINT32 gpu_dvfs_enable;
@@ -102,7 +102,7 @@ static IMG_UINT32 gpu_pre_loading;
 static IMG_UINT32 gpu_loading;
 static IMG_UINT32 gpu_block;
 static IMG_UINT32 gpu_idle;
-static IMG_UINT32 gpu_freq;
+static IMG_UINT32 gpu_freq __maybe_unused;
 
 static IMG_BOOL g_bDeviceInit = IMG_FALSE;
 
@@ -154,7 +154,7 @@ static PVRSRV_DEVICE_NODE *MTKGetRGXDevNode(void)
 	return NULL;
 }
 
-static IMG_UINT32 MTKGetRGXDevIdx(void)
+static IMG_UINT32 __maybe_unused MTKGetRGXDevIdx(void)
 {
 	static IMG_UINT32 ms_ui32RGXDevIdx = MTK_RGX_DEVICE_INDEX_INVALID;
 
@@ -220,7 +220,7 @@ static void MTKWriteBackFreqToRGX(PVRSRV_DEVICE_NODE *psDevNode,
 #ifdef MTK_MFGMTCMOS_AO
 static bool isPowerOn;
 #endif
-static void MTKEnableMfgMtcmos0(void)
+static void __maybe_unused MTKEnableMfgMtcmos0(void)
 {
 #ifdef MTK_MFGMTCMOS_AO
 	/* enable mfg mtcmos 0 whenever we need it */
@@ -239,7 +239,7 @@ static void MTKEnableMfgMtcmos0(void)
 #endif
 }
 
-static void MTKDisableMfgMtcmos0(void)
+static void __maybe_unused MTKDisableMfgMtcmos0(void)
 {
 #ifdef MTK_MFGMTCMOS_AO
 	/* disable mfg mtcmos 0 only for suspend */
@@ -283,8 +283,6 @@ static void MTKEnableMfgClock(IMG_BOOL bForce)
 
 static void MTKDisableMfgClock(IMG_BOOL bForce)
 {
-	int buck_state;
-
 	mtk_notify_gpu_power_change(0);
 	ged_dvfs_gpu_clock_switch_notify(0);
 
@@ -297,7 +295,7 @@ static void MTKDisableMfgClock(IMG_BOOL bForce)
 #endif
 
 #ifdef MTK_GPU_DVFS
-	buck_state = mt_gpufreq_voltage_enable_set(BUCK_OFF);
+	mt_gpufreq_voltage_enable_set(BUCK_OFF);
 #endif
 	ged_log_buf_print2(_mtk_ged_log, GED_LOG_ATTR_TIME, "BUCK_OFF");
 
@@ -332,34 +330,34 @@ static int MTKInitHWAPM(void)
 	mfg_writel(0x8004001b, (g_pvRegsKM + 0x24));
 
 	if (gpu_debug_enable) {
-		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *g_pvRegsKM+0x%x = 0x%x",
+		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *%p = 0x%x",
 		(g_pvRegsKM + 0x504), mfg_readl(g_pvRegsKM + 0x504)));
 
-		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *g_pvRegsKM+0x%x = 0x%x",
+		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *%p = 0x%x",
 		(g_pvRegsKM + 0x508), mfg_readl(g_pvRegsKM + 0x508)));
 
-		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *g_pvRegsKM+0x%x = 0x%x",
+		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *%p = 0x%x",
 		(g_pvRegsKM + 0x50c), mfg_readl(g_pvRegsKM + 0x50c)));
 
-		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *g_pvRegsKM+0x%x = 0x%x",
+		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *%p = 0x%x",
 		(g_pvRegsKM + 0x510), mfg_readl(g_pvRegsKM + 0x510)));
 
-		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *g_pvRegsKM+0x%x = 0x%x",
+		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *%p = 0x%x",
 		(g_pvRegsKM + 0x514), mfg_readl(g_pvRegsKM + 0x514)));
 
-		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *g_pvRegsKM+0x%x = 0x%x",
+		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *%p = 0x%x",
 		(g_pvRegsKM + 0x518), mfg_readl(g_pvRegsKM + 0x518)));
 
-		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *g_pvRegsKM+0x%x = 0x%x",
+		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *%p = 0x%x",
 		(g_pvRegsKM + 0x51c), mfg_readl(g_pvRegsKM + 0x51c)));
 
-		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *g_pvRegsKM+0x%x = 0x%x",
+		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *%p = 0x%x",
 		(g_pvRegsKM + 0x520), mfg_readl(g_pvRegsKM + 0x520)));
 
-		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *g_pvRegsKM+0x%x = 0x%x",
+		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *%p = 0x%x",
 		(g_pvRegsKM + 0x524), mfg_readl(g_pvRegsKM + 0x524)));
 
-		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *g_pvRegsKM+0x%x = 0x%x",
+		PVR_DPF((PVR_DBG_ERROR, "HWAPM: *%p = 0x%x",
 		(g_pvRegsKM + 0x528), mfg_readl(g_pvRegsKM + 0x528)));
 
 		PVR_DPF((PVR_DBG_ERROR, "LV1 *g_pvRegsKM = 0x%x",
@@ -496,7 +494,7 @@ static void MTKCommitFreqIdx(unsigned long ui32NewFreqID,
 		*pbCommited = IMG_FALSE;
 }
 
-static unsigned int MTKCommitFreqForPVR(unsigned long ui32NewFreq)
+static unsigned int __maybe_unused MTKCommitFreqForPVR(unsigned long ui32NewFreq)
 {
 	int i32MaxLevel = (int)(mt_gpufreq_get_dvfs_table_num()-1);
 	unsigned int ui32NewFreqID = 0;
@@ -551,7 +549,7 @@ static void MTKFreqInputBoostCB(unsigned int ui32BoostFreqID)
 
 }
 
-static void MTKFreqPowerLimitCB(unsigned int ui32LimitFreqID)
+static void __maybe_unused MTKFreqPowerLimitCB(unsigned int ui32LimitFreqID)
 {
 	if (g_iSkipCount > 0)
 		return;
@@ -781,7 +779,7 @@ static IMG_BOOL MTKGpuDVFSPolicy(IMG_UINT32 ui32GPULoading,
 	return IMG_FALSE;
 }
 
-static void MTKDVFSTimerFuncCB(void *pvData)
+static void __maybe_unused MTKDVFSTimerFuncCB(void *pvData)
 {
 	int i32MaxLevel = (int)(mt_gpufreq_get_dvfs_table_num() - 1);
 	int i32CurFreqID = (int)mt_gpufreq_get_cur_freq_index();
@@ -941,7 +939,7 @@ PVRSRV_ERROR MTKSystemPostPowerState(PVRSRV_SYS_POWER_STATE eNewPowerState)
 }
 
 #ifdef MTK_GPU_DVFS
-static void MTKBoostGpuFreq(void)
+static void __maybe_unused MTKBoostGpuFreq(void)
 {
 	if (gpu_debug_enable)
 		PVR_DPF((PVR_DBG_ERROR, "MTKBoostGpuFreq"));
@@ -949,7 +947,7 @@ static void MTKBoostGpuFreq(void)
 	MTKFreqInputBoostCB(0);
 }
 
-static void MTKSetBottomGPUFreq(unsigned int ui32FreqLevel)
+static void __maybe_unused MTKSetBottomGPUFreq(unsigned int ui32FreqLevel)
 {
 	unsigned int ui32MaxLevel;
 
@@ -979,12 +977,12 @@ static void MTKSetBottomGPUFreq(unsigned int ui32FreqLevel)
 
 }
 
-static unsigned int MTKCustomGetGpuFreqLevelCount(void)
+static unsigned int __maybe_unused MTKCustomGetGpuFreqLevelCount(void)
 {
 	return mt_gpufreq_get_dvfs_table_num();
 }
 
-static void MTKCustomBoostGpuFreq(unsigned int ui32FreqLevel)
+static void __maybe_unused MTKCustomBoostGpuFreq(unsigned int ui32FreqLevel)
 {
 	unsigned int ui32MaxLevel;
 
@@ -1016,7 +1014,7 @@ static void MTKCustomBoostGpuFreq(unsigned int ui32FreqLevel)
 	OSLockRelease(ghDVFSLock);
 }
 
-static void MTKCustomUpBoundGpuFreq(unsigned int ui32FreqLevel)
+static void __maybe_unused MTKCustomUpBoundGpuFreq(unsigned int ui32FreqLevel)
 {
 	unsigned int ui32MaxLevel;
 
@@ -1046,36 +1044,36 @@ static void MTKCustomUpBoundGpuFreq(unsigned int ui32FreqLevel)
 	OSLockRelease(ghDVFSLock);
 }
 
-static unsigned int MTKGetCustomBoostGpuFreq(void)
+static unsigned int __maybe_unused MTKGetCustomBoostGpuFreq(void)
 {
 	unsigned int ui32MaxLevel = mt_gpufreq_get_dvfs_table_num() - 1;
 
 	return ui32MaxLevel - g_cust_boost_freq_id;
 }
 
-static unsigned int MTKGetCustomUpBoundGpuFreq(void)
+static unsigned int __maybe_unused MTKGetCustomUpBoundGpuFreq(void)
 {
 	unsigned int ui32MaxLevel = mt_gpufreq_get_dvfs_table_num() - 1;
 
 	return ui32MaxLevel - g_cust_upbound_freq_id;
 }
 
-static IMG_UINT32 MTKGetGpuLoading(void)
+static IMG_UINT32 __maybe_unused MTKGetGpuLoading(void)
 {
 	return gpu_loading;
 }
 
-static IMG_UINT32 MTKGetGpuBlock(void)
+static IMG_UINT32 __maybe_unused MTKGetGpuBlock(void)
 {
 	return gpu_block;
 }
 
-static IMG_UINT32 MTKGetGpuIdle(void)
+static IMG_UINT32 __maybe_unused MTKGetGpuIdle(void)
 {
 	return gpu_idle;
 }
 
-static IMG_UINT32 MTKGetPowerIndex(void)
+static IMG_UINT32 __maybe_unused MTKGetPowerIndex(void)
 {
 	return gpu_power;
 }
@@ -1140,7 +1138,7 @@ static int MTKMFGOppUpdate(int ui32ThrottlePoint)
 }
 #endif
 
-static void MTKFakeGpuLoading(unsigned int *pui32Loading,
+static void __maybe_unused MTKFakeGpuLoading(unsigned int *pui32Loading,
 			      unsigned int *pui32Block,
 			      unsigned int *pui32Idle)
 {
@@ -1293,10 +1291,12 @@ PVRSRV_ERROR MTKMFGSystemInit(void)
 
 	return PVRSRV_OK;
 
+#if defined(MTK_GPU_DVFS) && !defined(ENABLE_COMMON_DVFS)
 ERROR:
 	MTKMFGSystemDeInit();
 
 	return PVRSRV_ERROR_INIT_FAILURE;
+#endif
 }
 
 void MTKMFGSystemDeInit(void)
@@ -1406,7 +1406,7 @@ EXPORT_SYMBOL(MTKFWDump);
 #if defined(MODULE)
 int mtk_mfg_async_init(void)
 #else
-static int __init mtk_mfg_async_init(void)
+static int __init __maybe_unused mtk_mfg_async_init(void)
 #endif
 {
 	return 0;
@@ -1416,7 +1416,7 @@ static int __init mtk_mfg_async_init(void)
 #if defined(MODULE)
 int mtk_mfg_2d_init(void)
 #else
-static int __init mtk_mfg_2d_init(void)
+static int __init __maybe_unused mtk_mfg_2d_init(void)
 #endif
 {
 	return 0;

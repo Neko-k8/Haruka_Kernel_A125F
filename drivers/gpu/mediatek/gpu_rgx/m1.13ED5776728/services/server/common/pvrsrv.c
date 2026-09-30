@@ -2450,7 +2450,7 @@ PVRSRV_ERROR IMG_CALLCONV PVRSRVCommonDeviceDestroy(PVRSRV_DEVICE_NODE *psDevice
 			                              psSync->pui32LinAddr,
 			                              psDeviceNode->ui32NextMMUInvalidateUpdate-1,
 			                              0xFFFFFFFF,
-			                              IMG_TRUE);
+			                              POLL_FLAG_LOG_ERROR);
 			PVR_LOG_RETURN_IF_ERROR(eError, "PVRSRVPollForValueKM");
 
 			/* Important to set the device node pointer to NULL

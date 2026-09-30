@@ -29,7 +29,6 @@
 #include <aee.h>
 #endif
 
-static struct proc_dir_entry *g_MTKPP_proc;
 static struct MTK_PROC_PRINT_DATA *g_MTKPPdata[MTKPP_ID_SIZE];
 
 static int g_init_done;
@@ -468,7 +467,7 @@ void MTKPP_Init(void)
 		}
 	}
 
-	g_MTKPP_proc = proc_create("gpulog", 0664, NULL, &g_MTKPP_proc_ops);
+	proc_create("gpulog", 0664, NULL, &g_MTKPP_proc_ops);
 
 #if defined(ENABLE_AEE_WHEN_LOCKUP)
 	g_MTKPP_workqueue.psWorkQueue =

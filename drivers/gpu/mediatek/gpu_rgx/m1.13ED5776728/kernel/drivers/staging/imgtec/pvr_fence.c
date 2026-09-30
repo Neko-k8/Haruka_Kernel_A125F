@@ -142,7 +142,7 @@ pvr_fence_context_fences_dump(struct pvr_fence_context *fctx,
 	list_for_each_entry(pvr_fence, &fctx->fence_list, fence_head) {
 		struct dma_fence *fence = pvr_fence->fence;
 		const char *timeline_value_str = "unknown timeline value";
-		const char *fence_value_str = "unknown fence value";
+		const char *fence_value_str __maybe_unused = "unknown fence value";
 
 		pvr_fence->base.ops->fence_value_str(&pvr_fence->base, value,
 						     sizeof(value));

@@ -740,7 +740,7 @@ PVRSRV_ERROR RGXFabricCoherencyTest(const void *hPrivate)
 	IMG_UINT32 ui32OddEvenSeed = 1;
 	PVRSRV_ERROR eError = PVRSRV_OK;
 	IMG_BOOL bFullTestPassed = IMG_TRUE;
-	IMG_BOOL bSubTestPassed = IMG_FALSE;
+	IMG_BOOL bSubTestPassed __maybe_unused = IMG_FALSE;
 	IMG_BOOL bExit = IMG_FALSE;
 
 	PVR_ASSERT(hPrivate != NULL);

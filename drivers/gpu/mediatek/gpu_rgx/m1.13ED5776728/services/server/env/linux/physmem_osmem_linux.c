@@ -3372,10 +3372,6 @@ PMRChangeSparseMemOSMem(PMR_IMPL_PRIVDATA pPriv,
 	void **psDMAVirtArray = psPMRPageArrayData->dmavirtarray;
 	dma_addr_t *psDMAPhysArray = psPMRPageArrayData->dmaphysarray;
 
-	struct page *psPage;
-	dma_addr_t psDMAPAddr;
-	void *pvDMAVAddr;
-
 	IMG_UINT32 ui32AdtnlAllocPages = 0; /*<! Number of pages to alloc from the OS */
 	IMG_UINT32 ui32AdtnlFreePages = 0; /*<! Number of pages to free back to the OS */
 	IMG_UINT32 ui32CommonRequestCount = 0; /*<! Number of pages to move position in the page array */
@@ -3528,13 +3524,10 @@ PMRChangeSparseMemOSMem(PMR_IMPL_PRIVDATA pPriv,
 		uiAllocpgidx = pai32AllocIndices[ui32Index];
 		uiFreepgidx  = pai32FreeIndices[ui32Loop];
 
-		psPage = psPageArray[uiAllocpgidx];
 		psPageArray[uiAllocpgidx] = psPageArray[uiFreepgidx];
 
 		if (bCMA)
 		{
-			pvDMAVAddr = psDMAVirtArray[uiAllocpgidx];
-			psDMAPAddr = psDMAPhysArray[uiAllocpgidx];
 			psDMAVirtArray[uiAllocpgidx] = psDMAVirtArray[uiFreepgidx];
 			psDMAPhysArray[uiAllocpgidx] = psDMAPhysArray[uiFreepgidx];
 		}

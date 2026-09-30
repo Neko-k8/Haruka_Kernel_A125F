@@ -3625,7 +3625,7 @@ PVRSRV_ERROR RGXHWPerfAcquireEvents(
 	PVRSRV_ERROR			eError;
 	RGX_KM_HWPERF_DEVDATA*	psDevData = (RGX_KM_HWPERF_DEVDATA*)hDevData;
 	IMG_PBYTE				pDataDest;
-	IMG_UINT32			ui32TlPackets = 0;
+	IMG_UINT32			ui32TlPackets __maybe_unused = 0;
 	PVRSRVTL_PPACKETHDR psHDRptr;
 	PVRSRVTL_PPACKETHDR pBufferEnd;
 	PVRSRVTL_PACKETTYPE ui16TlType;

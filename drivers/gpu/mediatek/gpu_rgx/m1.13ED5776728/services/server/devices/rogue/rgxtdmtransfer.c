@@ -486,12 +486,12 @@ PVRSRV_ERROR PVRSRVRGXTDMSubmitTransferKM(
 	RGX_CLIENT_CCB      *psClientCCB = FWCommonContextGetClientCCB(psTransferContext->sTDMData.psServerCommonContext);
 	IMG_UINT32          ui32IntJobRef = OSAtomicIncrement(&psDevInfo->iCCBSubmissionOrdinal);
 
-	IMG_UINT32 ui32CmdOffset = 0;
 	IMG_BOOL bCCBStateOpen;
 
 	IMG_UINT64               uiCheckFenceUID = 0;
 	IMG_UINT64               uiUpdateFenceUID = 0;
 #if defined(SUPPORT_WORKLOAD_ESTIMATION)
+	IMG_UINT32 ui32CmdOffset = 0;
 	RGXFWIF_WORKEST_KICK_DATA sWorkloadKickDataTransfer = {0};
 	IMG_UINT32 ui32TDMWorkloadDataRO = 0;
 	IMG_UINT32 ui32TDMCmdHeaderOffset = 0;
@@ -937,7 +937,9 @@ PVRSRV_ERROR PVRSRVRGXTDMSubmitTransferKM(
 		Only do the command helper release (which takes the server sync
 		operations if the acquire succeeded
 	*/
+#if defined(SUPPORT_WORKLOAD_ESTIMATION)
 	ui32CmdOffset = RGXGetHostWriteOffsetCCB(FWCommonContextGetClientCCB(psTransferContext->sTDMData.psServerCommonContext));
+#endif
 	RGXCmdHelperReleaseCmdCCB(1,
 	                          psCmdHelper,
 	                          "TQ_TDM",

@@ -397,7 +397,7 @@ PVRSRV_ERROR SysDmaRegisterForIoRemapping(DMA_ALLOC *psDmaAlloc)
  ******************************************************************************/
 void SysDmaDeregisterForIoRemapping(DMA_ALLOC *psDmaAlloc)
 {
-	size_t uiSize;
+	size_t uiSize __maybe_unused;
 	IMG_UINT32 ui32Idx;
 
 	if (psDmaAlloc == NULL ||

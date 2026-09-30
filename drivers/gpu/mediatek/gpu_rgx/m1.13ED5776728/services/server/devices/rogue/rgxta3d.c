@@ -1752,7 +1752,6 @@ err_HWRTDataCommonCookieAlloc:
 */
 PVRSRV_ERROR RGXDestroyHWRTDataSet(RGX_KM_HW_RT_DATASET *psKMHWRTDataSet)
 {
-	PVRSRV_RGXDEV_INFO *psDevInfo;
 	PVRSRV_DEVICE_NODE *psDevNode;
 	PVRSRV_ERROR eError;
 	PRGXFWIF_HWRTDATA psHWRTData;
@@ -1761,7 +1760,6 @@ PVRSRV_ERROR RGXDestroyHWRTDataSet(RGX_KM_HW_RT_DATASET *psKMHWRTDataSet)
 	PVR_ASSERT(psKMHWRTDataSet);
 
 	psDevNode = psKMHWRTDataSet->psDeviceNode;
-	psDevInfo = psDevNode->pvDevice;
 
 	eError = RGXSetFirmwareAddress(&psHWRTData,
 				psKMHWRTDataSet->psHWRTDataFwMemDesc, 0,
@@ -4192,8 +4190,8 @@ PVRSRV_ERROR PVRSRVRGXKickTA3DKM(RGX_SERVER_RENDER_CONTEXT	*psRenderContext,
 	if (iCheckTAFence >= 0 || iUpdateTATimeline >= 0 ||
 	    iCheck3DFence >= 0 || iUpdate3DTimeline >= 0)
 	{
-		PRGXFWIF_UFO_ADDR	*pauiClientTAIntUpdateUFOAddress = NULL;
-		PRGXFWIF_UFO_ADDR	*pauiClient3DIntUpdateUFOAddress = NULL;
+		PRGXFWIF_UFO_ADDR	*pauiClientTAIntUpdateUFOAddress __maybe_unused = NULL;
+		PRGXFWIF_UFO_ADDR	*pauiClient3DIntUpdateUFOAddress __maybe_unused = NULL;
 
 		CHKPT_DBG((PVR_DBG_ERROR,
 				   "%s: [TA] iCheckFence = %d, iUpdateTimeline = %d",

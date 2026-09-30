@@ -155,8 +155,7 @@ PVRSRV_ERROR TLClientOpenStream(SHARED_DEV_CONNECTION hDevConnection,
 	 * physical memory region */
 	eError = DevmemLocalImport(hDevConnection,
 	                           hTLImportHandle,
-	                           PVRSRV_MEMALLOCFLAG_CPU_READABLE |
-	                           PVRSRV_MEMALLOCFLAG_CPU_WRITEABLE,
+	                           ui32MemFlags,
 	                           &psSD->psUMmemDesc,
 	                           &uiImportSize,
 	                           "TLBuffer");

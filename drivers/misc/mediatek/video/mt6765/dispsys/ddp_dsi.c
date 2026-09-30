@@ -6638,10 +6638,10 @@ int ddp_dsi_build_cmdq(enum DISP_MODULE_ENUM module,
 	struct DSI_RX_DATA_REG read_data3;
 	unsigned char packet_type;
 	unsigned char buffer[30];
-	memset((void *)buffer, 0, 30);
 	int recv_data_cnt = 0;
-
 	static cmdqBackupSlotHandle hSlot[4] = {0, 0, 0, 0};
+
+	memset((void *)buffer, 0, 30);
 
 	if (module == DISP_MODULE_DSIDUAL)
 		dsi_i = 0;
