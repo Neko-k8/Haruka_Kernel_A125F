@@ -2789,9 +2789,6 @@ static int binder_translate_fd_array(struct binder_fd_array_object *fda,
 		return -EINVAL;
 	}
 
-	if (target_thread)
-		binder_thread_dec_tmpref(target_thread);
-
 	/*
 	 * the source data for binder_buffer_object is visible
 	 * to user-space and the @buffer element is the user
