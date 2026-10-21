@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export TC_DIR="/home/shiroyura/toolchain"
+export TC_DIR="/home/shiroyura/Kernel_Buld/toolchain"
 export CC="${TC_DIR}/neutron-clang-06092026/bin/clang"
 export CLANG_TRIPLE=aarch64-linux-gnu-
 export ARCH=arm64
